@@ -10,7 +10,7 @@ export default function Dashboard() {
   // Show dashboard with available data (fallback if profile not loaded yet)
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || userProfile?.full_name || 'Loading...';
   const displayEmail = userProfile?.email || user?.email || '';
-  const avatarUrl = userProfile?.avatar_url;
+  const avatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url;
 
   const handleSignOut = async () => {
     console.log('Sign out button clicked');
@@ -65,7 +65,7 @@ export default function Dashboard() {
                   <img
                     src={avatarUrl}
                     alt="Avatar"
-                    className="w-16 h-16 rounded-full object-cover"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
                   />
                 ) : (
                   <User className="w-8 h-8 text-purple-600" />
