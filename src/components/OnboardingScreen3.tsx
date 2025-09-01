@@ -56,10 +56,11 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
             className={`relative md:absolute md:-top-16 md:left-80 z-20 mb-2 md:mb-0 order-1 md:order-none transition-opacity duration-700 ${
               bubbleVisible ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{ transform: 'translateY(5px)' }}
           >
-            <div className="bg-white rounded-2xl p-3 md:p-4 shadow-2xl relative w-64 md:w-72 h-28 md:h-32 flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-2 md:p-3 shadow-2xl relative w-64 md:w-72 h-24 md:h-28 flex items-center justify-center">
               {/* Speech bubble tail */}
-              <div className="absolute bottom-0 left-1/2 md:left-12 transform translate-y-2 -translate-x-1/2 md:translate-x-0">
+              <div className="absolute bottom-0 left-1/2 md:left-16 transform translate-y-2 -translate-x-1/2 md:translate-x-0">
                 <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-white" />
               </div>
 
@@ -83,7 +84,7 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
             <img
               src={tigerImage}
               alt="Monte the Tiger Mascot with Map"
-              className="w-[300px] h-[300px] md:w-[400px] md:h-[400px] object-contain drop-shadow-2xl"
+              className="w-[300px] h-[300px] md:w-[500px] md:h-[500px] object-contain drop-shadow-2xl"
             />
           </div>
         </div>
@@ -108,7 +109,7 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
           </div>
 
           {/* Back and Proceed buttons */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-52">
               {/* Back */}
               <div
                 className={`order-2 md:order-1 flex justify-center md:justify-end transition-all duration-700 ease-out ${
