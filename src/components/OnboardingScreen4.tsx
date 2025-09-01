@@ -43,21 +43,29 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       setError('');
       setUploading(true);
       
-      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string) => {
+      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string, userId?: string) => {
         try {
-          // Generate unique filename
-          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `avatars/${fileName}`;
-
-          console.log('Starting upload for file:', fileName);
+          // Get current user ID for folder organization
+          const { data: { user } } = await supabase.auth.getUser();
+          const currentUserId = userId || user?.id;
           
-          // Upload to Supabase storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('avatars')
+          if (!currentUserId) {
+            throw new Error('User not authenticated');
+          }
+          
+          // Generate filename with user folder structure
+          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
+          const fileName = `avatar.${fileExt}`;
+          const filePath = `${currentUserId}/${fileName}`;
+
+          console.log('Starting upload for file:', filePath);
+          
+          // Upload to dedicated user-avatars bucket
+          const { error: uploadError } = await supabase.storage
+            .from('user-avatars')
             .upload(filePath, fileToUpload, {
               cacheControl: '3600',
-              upsert: true
+              upsert: true // Replace existing avatar
             });
 
           if (uploadError) {
@@ -65,11 +73,11 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
             throw uploadError;
           }
           
-          console.log('Upload successful:', uploadData);
+          console.log('Upload successful for path:', filePath);
 
           // Get public URL
           const { data: urlData } = supabase.storage
-            .from('avatars')
+            .from('user-avatars')
             .getPublicUrl(filePath);
 
           if (urlData?.publicUrl) {
@@ -81,8 +89,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
           
         } catch (error) {
           console.error('Upload process error:', error);
-          setError('Upload failed. You can proceed without an avatar.');
-          // Still allow proceeding without avatar
+          setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
           setUploading(false);
         }
@@ -98,8 +105,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
         
         heic2any({
           blob: file,
-          toType: 'image/jpeg',
-          quality: 0.6
+          toType: 'image/jpeg'
         })
         .then((convertedBlob) => {
           console.log('HEIC conversion successful');
@@ -109,9 +115,8 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
         })
         .catch((error) => {
           console.error('HEIC conversion error:', error);
-          console.log('HEIC conversion failed, but continuing...');
-          // Try uploading original file anyway
-          processAndUploadFile(file, file.name);
+          setError('HEIC conversion failed. Please try a different image format.');
+          setUploading(false);
         });
       } else {
         // Handle regular image files - upload directly
