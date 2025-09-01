@@ -3,13 +3,14 @@ import { useState } from 'react';
 import AuthForm from './components/AuthForm';
 import RegistrationScreen from './components/RegistrationScreen';
 import OnboardingScreen2 from './components/OnboardingScreen2';
+import OnboardingPasswordScreen from './components/OnboardingPasswordScreen';
 import OnboardingScreen3 from './components/OnboardingScreen3';
 import OnboardingScreen4 from './components/OnboardingScreen4';
 import StarryBackground from './components/StarryBackground';
 import tigerImage from './assets/tiger.png';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding3' | 'onboarding4'>('login');
+  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding-password' | 'onboarding3' | 'onboarding4'>('login');
 
   const handleAuthModeChange = (mode: 'login' | 'register') => {
     if (mode === 'register') {
@@ -28,6 +29,10 @@ function App() {
   };
 
   const handleProceedToOnboarding3 = () => {
+    setCurrentScreen('onboarding-password');
+  };
+
+  const handleProceedToOnboardingLocation = () => {
     setCurrentScreen('onboarding3');
   };
 
@@ -44,6 +49,10 @@ function App() {
   };
 
   const handleBackFromOnboarding3 = () => {
+    setCurrentScreen('onboarding-password');
+  };
+
+  const handleBackFromOnboardingPassword = () => {
     setCurrentScreen('onboarding2');
   };
 
@@ -67,6 +76,16 @@ function App() {
       <OnboardingScreen2 
         onBack={handleBackFromOnboarding2}
         onProceed={handleProceedToOnboarding3}
+      />
+    );
+  }
+
+  // Show password onboarding screen
+  if (currentScreen === 'onboarding-password') {
+    return (
+      <OnboardingPasswordScreen 
+        onBack={handleBackFromOnboardingPassword}
+        onProceed={handleProceedToOnboardingLocation}
       />
     );
   }
