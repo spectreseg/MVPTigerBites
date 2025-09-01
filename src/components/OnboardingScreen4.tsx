@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
+import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -30,11 +31,36 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Check if file is HEIC format
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+        // Convert HEIC to JPEG for preview
+        heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        }).then((convertedBlob) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setSelectedImage(e.target?.result as string);
+          };
+          reader.readAsDataURL(convertedBlob as Blob);
+        }).catch((error) => {
+          console.error('Error converting HEIC file:', error);
+          // Fallback: try to read as regular file
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setSelectedImage(e.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Handle regular image files
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setSelectedImage(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -114,7 +140,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/*"
+                accept="image/*,.heic,.HEIC"
                 className="hidden"
               />
               <button
