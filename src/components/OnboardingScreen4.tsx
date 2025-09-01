@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
-import { supabase } from '../lib/supabase';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -15,7 +14,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -30,48 +28,20 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
 
-    try {
-      // Show preview immediately
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-
-      // Upload to user-avatars bucket
-      const { error } = await supabase.storage
-        .from('user-avatars')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(fileName);
-
-      setAvatarUrl(urlData.publicUrl);
-      
-    } catch (error) {
-      setSelectedImage(null);
-      setAvatarUrl('');
-    } finally {
+    // Just use the file as a data URL for now - no Supabase upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setSelectedImage(result);
       setUploading(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUploadClick = () => {
@@ -79,7 +49,12 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const handleProceed = () => {
-    onProceed({ avatarUrl });
+    // Pass the data URL or empty string
+    onProceed({ avatarUrl: selectedImage || '' });
+  };
+
+  const handleSkip = () => {
+    onProceed({ avatarUrl: '' });
   };
 
   return (
@@ -146,7 +121,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : avatarUrl ? 'Change Avatar' : 'Upload Avatar'}
+                {uploading ? 'Processing...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
               </button>
               
               {/* Preview */}
@@ -159,13 +134,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
               )}
             </div>
 
-            {/* Proceed button */}
+            {/* Skip/Proceed button */}
             <div className={`order-2 md:order-3 flex justify-center transition-all duration-700 ease-out ${buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
               <button
-                onClick={handleProceed}
+                onClick={selectedImage ? handleProceed : handleSkip}
                 className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
               >
-                Proceed
+                {selectedImage ? 'Proceed' : 'Skip'}
               </button>
             </div>
           </div>
