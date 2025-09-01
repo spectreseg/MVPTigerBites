@@ -2,8 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
-// @ts-ignore - heic2any doesn't have perfect TypeScript definitions
-import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -15,7 +13,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -30,104 +27,20 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const validateImageFile = (file: File): boolean => {
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'image/bmp',
-      'image/tiff',
-      'image/svg+xml',
-      'image/heic',
-      'image/heif'
-    ];
-    
-    const allowedExtensions = [
-      '.jpg', '.jpeg', '.png', '.webp', '.gif', 
-      '.bmp', '.tiff', '.tif', '.svg', '.heic', '.heif'
-    ];
-    
-    const fileName = file.name.toLowerCase();
-    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-    const hasValidMimeType = allowedTypes.includes(file.type.toLowerCase());
-    
-    return hasValidExtension || hasValidMimeType;
-  };
-
-  const convertHeicToJpeg = async (file: File): Promise<File> => {
-    if (file.type === 'image/heic' || file.type === 'image/heif' || 
-        file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-      
-      try {
-        console.log('Converting HEIC file to JPEG...');
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8 // Good quality while keeping file size reasonable
-        });
-        
-        // heic2any can return an array or single blob
-        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        
-        // Create a new File object from the converted blob
-        const convertedFile = new File(
-          [blob], 
-          file.name.replace(/\.(heic|heif)$/i, '.jpg'), 
-          { type: 'image/jpeg' }
-        );
-        
-        console.log('HEIC conversion successful');
-        return convertedFile;
-      } catch (error) {
-        console.error('HEIC conversion failed:', error);
-        throw new Error('Failed to convert HEIC image. Please try a different format.');
-      }
-    }
-    return file;
-  };
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Clear previous errors
-      setUploadError('');
-      
-      // Validate file type
-      if (!validateImageFile(file)) {
-        setUploadError('Please select a valid image file (JPEG, PNG, WebP, GIF, BMP, TIFF, SVG, or HEIC)');
-        return;
-      }
-      
-      // Check file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        setUploadError('File size must be less than 10MB');
-        return;
-      }
-      
-      // Convert HEIC if needed and read file
-      convertHeicToJpeg(file).then(processedFile => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setSelectedImage(e.target?.result as string);
-        };
-        reader.onerror = () => {
-          setUploadError('Error reading file. Please try again.');
-        };
-        reader.readAsDataURL(processedFile);
-      }).catch(() => {
-        setUploadError('Error processing image. Please try again.');
-      });
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleUploadClick = () => {
-    setUploadError(''); // Clear any previous errors
     fileInputRef.current?.click();
   };
-
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -201,7 +114,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.tiff,.tif,.svg,.heic,.heif,image/*"
+                accept="image/*"
                 className="hidden"
               />
               <button
@@ -211,13 +124,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 <Upload className="w-5 h-5" />
                 Upload
               </button>
-              
-              {/* Show upload error */}
-              {uploadError && (
-                <div className="mt-2 text-red-500 text-sm text-center">
-                  {uploadError}
-                </div>
-              )}
               
               {/* Show selected image preview */}
               {selectedImage && (
