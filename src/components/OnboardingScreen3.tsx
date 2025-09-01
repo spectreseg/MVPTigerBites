@@ -56,7 +56,7 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
             className={`relative md:absolute md:-top-16 md:left-80 z-20 mb-2 md:mb-0 order-1 md:order-none transition-opacity duration-700 ${
               bubbleVisible ? 'opacity-100' : 'opacity-0'
             }`}
-            style={{ transform: 'translateY(-40px)' }}
+            style={{ transform: 'translateY(-40px)', '@media (min-width: 768px)': { transform: 'translateY(10px)' } }}
           >
             <div className="bg-white rounded-2xl p-2 md:p-3 shadow-2xl relative w-64 md:w-72 h-20 md:h-24 flex items-center justify-center">
               {/* Speech bubble tail */}
