@@ -4,7 +4,7 @@ import tigerImage from '../assets/tiger3.png';
 
 interface OnboardingScreen3Props {
   onBack: () => void;
-  onProceed: () => void;
+  onProceed: (data: { locationEnabled: boolean; latitude?: number; longitude?: number }) => void;
 }
 
 export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScreen3Props) {
@@ -28,18 +28,29 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log('Location granted:', position.coords);
-          onProceed();
+          onProceed({
+            locationEnabled: true,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
         },
         (error) => {
-          console.log('Location denied:', error);
-          onProceed(); // proceed even if denied
+          onProceed({
+            locationEnabled: false
+          });
         }
       );
     } else {
-      console.log('Geolocation not supported');
-      onProceed();
+      onProceed({
+        locationEnabled: false
+      });
     }
+  };
+
+  const handleSkipLocation = () => {
+    onProceed({
+      locationEnabled: false
+    });
   };
 
   return (
@@ -130,7 +141,7 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
               }`}
             >
               <button
-                onClick={onProceed}
+                onClick={handleSkipLocation}
                 className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
               >
                 Proceed

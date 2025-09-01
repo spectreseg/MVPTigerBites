@@ -4,7 +4,7 @@ import tigerImage from '../assets/tiger2.png';
 
 interface OnboardingScreen2Props {
   onBack: () => void;
-  onProceed: () => void;
+  onProceed: (data: { fullName: string; email: string }) => void;
 }
 
 export default function OnboardingScreen2({ onBack, onProceed }: OnboardingScreen2Props) {
@@ -71,8 +71,10 @@ export default function OnboardingScreen2({ onBack, onProceed }: OnboardingScree
       return;
     }
     
-    console.log('Form submitted:', formData);
-    onProceed();
+    onProceed({
+      fullName: formData.name,
+      email: formData.email
+    });
   };
 
   return (

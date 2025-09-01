@@ -5,7 +5,7 @@ import tigerImage from '../assets/tiger6.png';
 
 interface OnboardingPasswordScreenProps {
   onBack: () => void;
-  onProceed: () => void;
+  onProceed: (data: { password: string }) => void;
 }
 
 export default function OnboardingPasswordScreen({ onBack, onProceed }: OnboardingPasswordScreenProps) {
@@ -86,8 +86,7 @@ export default function OnboardingPasswordScreen({ onBack, onProceed }: Onboardi
       return;
     }
     
-    console.log('Password form submitted:', { passwordSet: true });
-    onProceed();
+    onProceed({ password: formData.password });
   };
 
   return (

@@ -6,7 +6,7 @@ import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
-  onProceed: () => void;
+  onProceed: (data: { avatarUrl: string }) => void;
 }
 
 export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScreen4Props) {
@@ -14,6 +14,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,9 +29,16 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
+  const handleProceed = () => {
+    onProceed({
+      avatarUrl: selectedImage || ''
+    });
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setUploading(true);
       // Check if file is HEIC format
       const fileName = file.name.toLowerCase();
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
@@ -54,32 +62,31 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
           reader.onload = (e) => {
             if (e.target?.result) {
               setSelectedImage(e.target.result as string);
-              console.log('HEIC preview created successfully');
             }
+            setUploading(false);
           };
           reader.onerror = () => {
-            console.error('Failed to read converted blob');
             alert('Error creating preview. Please try a different image.');
+            setUploading(false);
           };
           reader.readAsDataURL(blob);
         })
         .catch((error) => {
-          console.error('HEIC conversion error:', error);
           alert('Unable to convert HEIC file. Please try uploading a JPG or PNG instead.');
+          setUploading(false);
         });
       } else {
         // Handle regular image files
-        console.log('Processing regular image file...');
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result) {
             setSelectedImage(e.target.result as string);
-            console.log('Regular image preview created successfully');
           }
+          setUploading(false);
         };
         reader.onerror = () => {
-          console.error('Failed to read image file');
           alert('Error reading image file. Please try a different image.');
+          setUploading(false);
         };
         reader.readAsDataURL(file);
       }
@@ -167,10 +174,11 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
               />
               <button
                 onClick={handleUploadClick}
-                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2"
+                disabled={uploading}
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <Upload className="w-5 h-5" />
-                Upload
+                {uploading ? 'Processing...' : 'Upload'}
               </button>
               
               {/* Show selected image preview */}
@@ -194,7 +202,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
               }`}
             >
               <button
-                onClick={onProceed}
+                onClick={handleProceed}
                 className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
               >
                 proceed

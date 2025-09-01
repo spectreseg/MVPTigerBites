@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { useAuthContext } from '../context/AuthContext';
 
 interface AuthFormProps {
   mode: 'login';
@@ -8,6 +9,8 @@ interface AuthFormProps {
 
 export default function AuthForm({ onToggleMode }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,17 +18,36 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
     fullName: ''
   });
 
+  const { signIn } = useAuthContext();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(''); // Clear error when user starts typing
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Integrate with Supabase
-    console.log('Form submitted:', formData);
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password');
+        } else {
+          setError(error.message);
+        }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,6 +79,12 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -114,9 +142,10 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
 
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-2.5 md:py-3 px-4 text-sm sm:text-base rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-2.5 md:py-3 px-4 text-sm sm:text-base rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
-          Sign In
+          {loading ? 'Signing In...' : 'Sign In'}
         </button>
         </form>
       </div>

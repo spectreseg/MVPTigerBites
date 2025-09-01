@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
+import { AuthProvider, useAuthContext } from './context/AuthContext';
 import AuthForm from './components/AuthForm';
 import RegistrationScreen from './components/RegistrationScreen';
 import OnboardingScreen2 from './components/OnboardingScreen2';
@@ -8,10 +9,37 @@ import OnboardingScreen3 from './components/OnboardingScreen3';
 import OnboardingScreen4 from './components/OnboardingScreen4';
 import OnboardingFinalScreen from './components/OnboardingFinalScreen';
 import StarryBackground from './components/StarryBackground';
+import Dashboard from './components/Dashboard';
 import tigerImage from './assets/tiger.png';
 
-function App() {
+function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding-password' | 'onboarding3' | 'onboarding4' | 'onboarding-final'>('login');
+  const [registrationData, setRegistrationData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    avatarUrl: '',
+    locationEnabled: false,
+    latitude: null as number | null,
+    longitude: null as number | null,
+  });
+  
+  const { user, loading } = useAuthContext();
+
+  // Show loading screen while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <StarryBackground />
+        <div className="relative z-10 text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show dashboard if user is authenticated
+  if (user) {
+    return <Dashboard />;
+  }
 
   const handleAuthModeChange = (mode: 'login' | 'register') => {
     if (mode === 'register') {
@@ -55,6 +83,26 @@ function App() {
     setCurrentScreen('onboarding2');
   };
 
+  const handleOnboarding2Data = (data: { fullName: string; email: string }) => {
+    setRegistrationData(prev => ({ ...prev, ...data }));
+    setCurrentScreen('onboarding-password');
+  };
+
+  const handlePasswordData = (data: { password: string }) => {
+    setRegistrationData(prev => ({ ...prev, ...data }));
+    setCurrentScreen('onboarding3');
+  };
+
+  const handleLocationData = (data: { locationEnabled: boolean; latitude?: number; longitude?: number }) => {
+    setRegistrationData(prev => ({ ...prev, ...data }));
+    setCurrentScreen('onboarding4');
+  };
+
+  const handleAvatarData = (data: { avatarUrl: string }) => {
+    setRegistrationData(prev => ({ ...prev, ...data }));
+    setCurrentScreen('onboarding-final');
+  };
+
   const handleBackFromOnboarding2 = () => {
     setCurrentScreen('register');
   };
@@ -71,11 +119,16 @@ function App() {
     setCurrentScreen('onboarding3');
   };
 
+  const handleCompleteRegistration = async () => {
+    // Registration will be handled in OnboardingFinalScreen
+    setCurrentScreen('login');
+  };
   // Show final onboarding screen
   if (currentScreen === 'onboarding-final') {
     return (
       <OnboardingFinalScreen 
-        onComplete={handleRegistrationComplete}
+        registrationData={registrationData}
+        onComplete={handleCompleteRegistration}
       />
     );
   }
@@ -95,7 +148,7 @@ function App() {
     return (
       <OnboardingScreen2 
         onBack={handleBackFromOnboarding2}
-        onProceed={handleProceedToOnboarding3}
+        onProceed={handleOnboarding2Data}
       />
     );
   }
@@ -105,7 +158,7 @@ function App() {
     return (
       <OnboardingPasswordScreen 
         onBack={handleBackFromOnboardingPassword}
-        onProceed={handleProceedToOnboardingLocation}
+        onProceed={handlePasswordData}
       />
     );
   }
@@ -115,7 +168,7 @@ function App() {
     return (
       <OnboardingScreen3 
         onBack={handleBackFromOnboarding3}
-        onProceed={handleProceedToOnboarding4}
+        onProceed={handleLocationData}
       />
     );
   }
@@ -125,7 +178,7 @@ function App() {
     return (
       <OnboardingScreen4 
         onBack={handleBackFromOnboarding4}
-        onProceed={handleProceedToFinal}
+        onProceed={handleAvatarData}
       />
     );
   }
@@ -173,6 +226,14 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
