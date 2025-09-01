@@ -47,22 +47,17 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       };
       reader.readAsDataURL(file);
 
-      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         throw new Error('Not authenticated');
       }
-
       setUploadStatus('Uploading to storage...');
       
-      // Create simple file path
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-      
       console.log('Uploading to user-avatars bucket with path:', fileName);
 
       // Upload to public bucket (user-avatars)
-      const { data, error } = await supabase.storage
         .from('user-avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -72,22 +67,17 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       if (error) {
         console.error('Upload error:', error);
         throw new Error(`Upload failed: ${error.message}`);
-      }
 
       console.log('Upload successful:', data);
       
-      // Get public URL since bucket is public
-      const { data: urlData } = supabase.storage
         .from('user-avatars')
         .getPublicUrl(fileName);
 
       console.log('Public URL:', urlData.publicUrl);
-      
       setAvatarUrl(urlData.publicUrl);
       setUploadStatus('✓ Upload successful!');
       
     } catch (error) {
-      console.error('Upload error:', error);
       setUploadStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setSelectedImage(null);
       setAvatarUrl('');
