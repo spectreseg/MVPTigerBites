@@ -7,19 +7,7 @@ export default function Dashboard() {
 
   console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
 
-  // Show loading only if we have a user but no profile yet (and not loading forever)
-  if (user && !userProfile && loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If we have a user but no profile (and not loading), show dashboard with fallback data
+  // Show dashboard with available data (fallback if profile not loaded yet)
   const displayName = userProfile?.full_name || user?.email?.split('@')[0] || 'User';
   const displayEmail = userProfile?.email || user?.email || '';
   const avatarUrl = userProfile?.avatar_url;
