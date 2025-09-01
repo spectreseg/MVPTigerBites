@@ -208,25 +208,6 @@ export default function OnboardingPasswordScreen({ onBack, onProceed }: Onboardi
                     <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
                   )}
                 </div>
-
-                {/* Password requirements */}
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p className="font-medium">Password must contain:</p>
-                  <ul className="space-y-1 ml-2">
-                    <li className={`${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                      • At least 8 characters
-                    </li>
-                    <li className={`${/(?=.*[a-z])/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      • One lowercase letter
-                    </li>
-                    <li className={`${/(?=.*[A-Z])/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      • One uppercase letter
-                    </li>
-                    <li className={`${/(?=.*\d)/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      • One number
-                    </li>
-                  </ul>
-                </div>
               </form>
             </div>
 
