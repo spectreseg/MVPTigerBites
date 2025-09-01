@@ -15,7 +15,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [avatarPath, setAvatarPath] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,12 +35,11 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Starting upload for file:', file.name, 'Size:', file.size);
-    setError('');
     setUploading(true);
+    setUploadSuccess(false);
 
     try {
-      // Show immediate preview
+      // Show preview immediately
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
@@ -48,39 +47,26 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       reader.readAsDataURL(file);
 
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('User not authenticated');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      console.log('User authenticated:', user.id);
-
-      // Create unique file path
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `avatar-${Date.now()}.${fileExt}`;
+      // Simple file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('Uploading to path:', filePath);
-
-      // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
+      // Upload to user-avatars bucket
+      const { error } = await supabase.storage
         .from('user-avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+        .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
+      if (error) throw error;
 
-      console.log('Upload successful:', data);
       setAvatarPath(filePath);
+      setUploadSuccess(true);
       
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      setError(error.message || 'Upload failed');
+    } catch (error) {
+      console.error('Upload failed:', error);
       setSelectedImage(null);
       setAvatarPath('');
     } finally {
@@ -93,26 +79,21 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const handleProceed = () => {
-    onProceed({
-      avatarUrl: avatarPath
-    });
+    onProceed({ avatarUrl: avatarPath });
   };
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Starry background */}
       <StarryBackground />
 
-      {/* Main content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-4 md:py-8">
         {/* Content container with tiger and text */}
         <div className="relative flex flex-col items-center justify-center -mb-8 md:-mb-16">
           {/* Speech bubble */}
-          <div className={`relative md:absolute md:-top-16 md:left-80 z-20 mb-2 md:mb-0 order-1 md:order-none transition-opacity duration-700 ${bubbleVisible ? 'opacity-100' : 'opacity-0'}`}
-               style={{ transform: 'translateY(25px)' }}>
-            <div className="bg-white rounded-2xl p-2 md:p-2 shadow-2xl relative w-56 md:w-64 h-16 md:h-18 flex items-center justify-center">
-              <div className="absolute md:bottom-0 md:left-12 bottom-0 left-1/2 md:left-12 transform md:translate-y-2 translate-y-2 -translate-x-1/2 md:translate-x-0">
-                <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-white"></div>
+          <div className={`relative md:absolute md:-top-16 md:left-80 z-20 mb-2 md:mb-0 order-1 md:order-none transition-opacity duration-700 ${bubbleVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="bg-white rounded-2xl p-2 md:p-3 shadow-2xl relative w-56 md:w-64 h-16 md:h-18 flex items-center justify-center">
+              <div className="absolute bottom-0 left-1/2 md:left-12 transform translate-y-2 -translate-x-1/2 md:translate-x-0">
+                <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-white" />
               </div>
               
               <div className="text-center">
@@ -133,7 +114,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
           </div>
         </div>
 
-        {/* Gap below tiger */}
         <div className="h-8 md:h-12"></div>
 
         {/* Buttons container */}
@@ -156,47 +136,32 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                accept="image/*"
                 className="hidden"
               />
               
               <button
                 onClick={handleUploadClick}
                 disabled={uploading}
-                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
+                {uploading ? 'Uploading...' : uploadSuccess ? 'Change Avatar' : 'Upload Avatar'}
               </button>
               
-              {/* Show upload status */}
+              {/* Status */}
               {uploading && (
                 <div className="mt-3 text-center">
-                  <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-lg">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Processing...
-                  </div>
+                  <div className="text-blue-400 text-sm">Processing...</div>
                 </div>
               )}
               
-              {/* Show selected image preview */}
-              {selectedImage && !uploading && (
+              {uploadSuccess && selectedImage && (
                 <div className="mt-3 flex flex-col items-center">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
-                    <img
-                      src={selectedImage}
-                      alt="Avatar preview"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={selectedImage} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
-                  <p className="text-green-400 text-sm mt-2">✓ Uploaded successfully!</p>
-                </div>
-              )}
-              
-              {/* Show error message */}
-              {error && (
-                <div className="mt-2 text-center">
-                  <p className="text-red-400 text-sm">{error}</p>
+                  <p className="text-green-400 text-sm mt-2">✓ Ready to proceed!</p>
                 </div>
               )}
             </div>
