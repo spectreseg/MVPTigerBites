@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
-import tigerImage from '../assets/tiger3.png'; // Using tiger3.png as specified
+import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
 
 interface OnboardingScreen4Props {
   onBack: () => void;
