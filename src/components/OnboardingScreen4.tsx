@@ -31,30 +31,36 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check if file is HEIC format (HEIC files often have empty or application/octet-stream MIME type)
-      const isHeic = file.name.toLowerCase().endsWith('.heic') || 
-                     file.name.toLowerCase().endsWith('.heif') ||
-                     file.type === 'image/heic' || 
-                     file.type === 'image/heif';
+      // Check if file is HEIC format
+      const fileName = file.name.toLowerCase();
+      const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
       
       if (isHeic) {
-        // Convert HEIC to JPEG for preview
-        heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8,
-        }).then((convertedBlob: Blob | Blob[]) => {
-          // heic2any can return a single Blob or array of Blobs
-          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            setSelectedImage(e.target?.result as string);
-          };
-          reader.readAsDataURL(blob);
-        }).catch((error) => {
-          console.error('Error converting HEIC file:', error);
-          alert('Error processing HEIC file. Please try a different image format.');
-        });
+        // Convert HEIC to JPEG with optimized settings for speed
+        try {
+          heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.6, // Lower quality for faster processing
+            multiple: false // Ensure single output
+          }).then((convertedBlob) => {
+            // Handle the converted blob
+            const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              if (e.target?.result) {
+                setSelectedImage(e.target.result as string);
+              }
+            };
+            reader.readAsDataURL(blob);
+          }).catch((error) => {
+            console.error('HEIC conversion failed:', error);
+            alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
+          });
+        } catch (error) {
+          console.error('HEIC processing error:', error);
+          alert('HEIC files are not supported on this device. Please use JPG or PNG format.');
+        }
       } else {
         // Handle regular image files
         const reader = new FileReader();
@@ -142,7 +148,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/*,.heic,.HEIC,.heif,.HEIF"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.heic,.HEIC,.heif,.HEIF"
                 className="hidden"
               />
               <button
