@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Camera } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
-import heic2any from 'heic2any';
 import { supabase } from '../lib/supabase';
 
 interface OnboardingScreen4Props {
@@ -17,7 +16,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [uploadedUrl, setUploadedUrl] = useState<string>('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,31 +31,33 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setError('');
-      uploadAvatar(file);
-    }
-  };
+    if (!file) return;
 
-  const uploadAvatar = async (file: File) => {
+    setError('');
     setUploading(true);
-    
+
     try {
-      // Get current user ID
+      // Show immediate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setError('User not authenticated');
-        return;
+        throw new Error('User not authenticated');
       }
 
-      // Create file path
+      // Create file path: userId/filename
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `avatar-${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
-      
-      // Upload file to Supabase storage
+
+      // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
@@ -68,26 +69,15 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
         throw uploadError;
       }
 
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      // Since it's a private bucket, we'll store the path and generate signed URLs when needed
+      setAvatarUrl(filePath);
+      console.log('Avatar uploaded successfully to:', filePath);
 
-      if (!publicUrl) {
-        throw new Error('Failed to get public URL');
-      }
-
-      // Set both preview and uploaded URL
-      setSelectedImage(publicUrl);
-      setUploadedUrl(publicUrl);
-      
-      console.log('Avatar uploaded successfully:', publicUrl);
-      
     } catch (error: any) {
       console.error('Upload error:', error);
       setError(error.message || 'Upload failed');
       setSelectedImage(null);
-      setUploadedUrl('');
+      setAvatarUrl('');
     } finally {
       setUploading(false);
     }
@@ -99,7 +89,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
   const handleProceed = () => {
     onProceed({
-      avatarUrl: uploadedUrl
+      avatarUrl: avatarUrl
     });
   };
 
@@ -175,7 +165,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.heic,.HEIC,.heif,.HEIF"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 className="hidden"
               />
               <button
@@ -184,7 +174,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? 'Uploading...' : 'Upload Avatar'}
               </button>
               
               {/* Show selected image preview */}

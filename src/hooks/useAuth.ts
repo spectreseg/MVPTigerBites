@@ -44,7 +44,6 @@ export function useAuth() {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('Fetching user profile for:', userId);
-      setLoading(true);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -62,8 +61,6 @@ export function useAuth() {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUserProfile(null);
-    } finally {
-      setLoading(false);
     }
   };
 

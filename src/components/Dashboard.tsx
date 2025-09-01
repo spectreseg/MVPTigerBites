@@ -1,16 +1,50 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { LogOut, User, MapPin, Heart } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
   const { user, userProfile, signOut, loading } = useAuthContext();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [loadingAvatar, setLoadingAvatar] = useState(false);
 
   console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
+
+  // Load avatar when userProfile changes
+  useEffect(() => {
+    if (userProfile?.avatar_url) {
+      loadAvatar(userProfile.avatar_url);
+    }
+  }, [userProfile?.avatar_url]);
+
+  const loadAvatar = async (avatarPath: string) => {
+    if (!avatarPath) return;
+    
+    setLoadingAvatar(true);
+    try {
+      // Generate signed URL for private avatar
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .createSignedUrl(avatarPath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        setAvatarUrl(null);
+      } else {
+        setAvatarUrl(data.signedUrl);
+      }
+    } catch (error) {
+      console.error('Error loading avatar:', error);
+      setAvatarUrl(null);
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
 
   // Show dashboard with available data (fallback if profile not loaded yet)
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || userProfile?.full_name || 'Loading...';
   const displayEmail = userProfile?.email || user?.email || '';
-  const avatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url;
 
   const handleSignOut = async () => {
     console.log('Sign out button clicked');
@@ -61,11 +95,13 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {avatarUrl ? (
+                {loadingAvatar ? (
+                  <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                ) : avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt="Avatar"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
+                    className="w-16 h-16 rounded-full object-cover"
                   />
                 ) : (
                   <User className="w-8 h-8 text-purple-600" />
