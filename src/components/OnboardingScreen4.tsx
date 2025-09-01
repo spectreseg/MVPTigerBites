@@ -31,12 +31,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const handleProceed = () => {
-    onProceed({
-      avatarUrl: selectedImage || ''
-    });
-  };
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
