@@ -15,7 +15,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,9 +34,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Starting upload for file:', file.name);
     setUploading(true);
-    setUploadStatus('Getting user info...');
 
     try {
       // Show preview immediately
@@ -47,41 +44,29 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       };
       reader.readAsDataURL(file);
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('Not authenticated');
-      }
-      setUploadStatus('Uploading to storage...');
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
       
+      // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-      console.log('Uploading to user-avatars bucket with path:', fileName);
 
-      // Upload to public bucket (user-avatars)
-      const { data, error } = await supabase.storage
+      // Upload to user-avatars bucket
+      const { error } = await supabase.storage
         .from('user-avatars')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+        .upload(fileName, file);
 
-      if (error) {
-        console.error('Upload error:', error);
-        console.error('Upload error:', error);
-        setUploadStatus(`Upload failed: ${error.message}`);
-        return;
+      if (error) throw error;
 
-      // Get public URL  
+      // Get public URL
       const { data: urlData } = supabase.storage
         .from('user-avatars')
         .getPublicUrl(fileName);
 
-      console.log('Public URL:', urlData.publicUrl);
       setAvatarUrl(urlData.publicUrl);
-      setUploadStatus('✓ Upload successful!');
       
     } catch (error) {
-      setUploadStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setSelectedImage(null);
       setAvatarUrl('');
     } finally {
@@ -163,19 +148,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 <Upload className="w-5 h-5" />
                 {uploading ? 'Uploading...' : avatarUrl ? 'Change Avatar' : 'Upload Avatar'}
               </button>
-              
-              {/* Status */}
-              {uploadStatus && (
-                <div className="mt-3 text-center">
-                  <div className={`text-sm px-3 py-2 rounded-lg ${
-                    uploadStatus.includes('Error') ? 'text-red-400 bg-red-900/20' : 
-                    uploadStatus.includes('✓') ? 'text-green-400 bg-green-900/20' : 
-                    'text-blue-400 bg-blue-900/20'
-                  }`}>
-                    {uploadStatus}
-                  </div>
-                </div>
-              )}
               
               {/* Preview */}
               {selectedImage && (
