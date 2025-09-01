@@ -119,8 +119,9 @@ function AppContent() {
   };
 
   const handleCompleteRegistration = async () => {
-    // Registration will be handled in OnboardingFinalScreen
-    setCurrentScreen('login');
+    // Registration completed successfully - user should now be authenticated
+    // The useEffect will handle redirecting to dashboard when user state updates
+    console.log('Registration completed, waiting for auth state update...');
   };
   // Show final onboarding screen
   if (currentScreen === 'onboarding-final') {

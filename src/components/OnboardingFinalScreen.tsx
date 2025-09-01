@@ -97,10 +97,10 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         
         setRegistering(false);
         
-        // Auto-redirect after 2 seconds on success
+        // Auto-redirect after 3 seconds on success to allow user to see the message
         setTimeout(() => {
           onComplete();
-        }, 2000);
+        }, 3000);
       } else {
         setError('Registration failed - no user data returned');
         setRegistering(false);
@@ -114,15 +114,15 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden md:overflow-y-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Starry background */}
       <StarryBackground />
       
       {/* Main content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-4 md:py-8">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8 md:py-12">
         
         {/* Thank you message */}
-        <div className={`text-center mb-8 md:mb-12 transition-all duration-700 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+        <div className={`text-center mb-8 md:mb-16 transition-all duration-700 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           {error ? (
             <div className="text-center">
               <h1 className="text-red-400 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide mb-4">
@@ -143,7 +143,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
               <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide mb-4">
                 Creating your account...
               </h1>
-              <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide">
+              <p className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-serif font-light tracking-wide">
                 Please wait
               </p>
             </>
@@ -152,7 +152,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
               <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide mb-4">
                 Thanks for registering!
               </h1>
-              <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide">
+              <p className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-serif font-light tracking-wide">
                 Redirecting to dashboard...
               </p>
             </>
@@ -160,11 +160,11 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         </div>
 
         {/* Monte mascot with heart */}
-        <div className={`transition-transform duration-1000 ease-out ${tigerVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`flex-shrink-0 transition-transform duration-1000 ease-out ${tigerVisible ? 'translate-y-0' : 'translate-y-full'}`}>
           <img
             src={tigerImage}
             alt="Monte the Tiger Mascot with Heart"
-            className="w-[300px] h-[300px] md:w-[500px] md:h-[500px] object-contain drop-shadow-2xl"
+            className="w-[250px] h-[250px] md:w-[400px] md:h-[400px] object-contain drop-shadow-2xl"
           />
         </div>
         
