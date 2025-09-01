@@ -35,13 +35,48 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
       
       if (isHeic) {
-        // Show helpful message for HEIC files
-        alert('HEIC files need to be converted first. Please convert your HEIC file to JPG using your device\'s photo app or online converter, then upload the JPG version.');
-        // Clear the file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+        // Convert HEIC to JPEG using browser's built-in capabilities
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
+          return;
         }
-        return;
+
+        // Create object URL for the HEIC file
+        const objectUrl = URL.createObjectURL(file);
+        
+        img.onload = () => {
+          // Set canvas dimensions
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          // Draw image to canvas
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert to JPEG and create preview
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                setSelectedImage(e.target?.result as string);
+              };
+              reader.readAsDataURL(blob);
+            }
+          }, 'image/jpeg', 0.8);
+          
+          // Clean up
+          URL.revokeObjectURL(objectUrl);
+        };
+        
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
+        };
+        
+        img.src = objectUrl;
       } else {
         // Handle regular image files
         const reader = new FileReader();
@@ -129,7 +164,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.heic,.HEIC,.heif,.HEIF"
                 className="hidden"
               />
               <button
