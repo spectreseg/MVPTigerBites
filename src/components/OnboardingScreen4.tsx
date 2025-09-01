@@ -223,61 +223,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     </div>
   );
 }
-        return;
-      }
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(filePath);
-
-      if (urlData?.publicUrl) {
-        console.log('Upload successful, URL:', urlData.publicUrl);
-        // Keep the preview as is, but store the URL for later use
-        // The preview will remain the local file preview for better UX
-      }
-      
-    } catch (error) {
-      console.error('Upload error:', error);
-      setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleProceed = async () => {
-    // If we have a selected image, get the Supabase URL
-    let avatarUrl = '';
-    
-    if (selectedImage && !selectedImage.startsWith('data:')) {
-      // Already have a Supabase URL
-      avatarUrl = selectedImage;
-    } else if (selectedImage) {
-      // We have a local preview, need to get the Supabase URL
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: urlData } = supabase.storage
-            .from('user-avatars')
-            .getPublicUrl(`${user.id}/avatar.jpg`);
-          
-          if (urlData?.publicUrl) {
-            avatarUrl = urlData.publicUrl;
-          }
-        }
-      } catch (error) {
-        console.error('Error getting avatar URL:', error);
-      }
-    }
-    
-    onProceed({
-      avatarUrl
-    });
-  };
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
