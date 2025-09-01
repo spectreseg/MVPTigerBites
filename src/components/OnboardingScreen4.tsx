@@ -58,6 +58,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       console.log('Uploading to user-avatars bucket with path:', fileName);
 
       // Upload to public bucket (user-avatars)
+      const { data, error } = await supabase.storage
         .from('user-avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -66,10 +67,12 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
       if (error) {
         console.error('Upload error:', error);
-        throw new Error(`Upload failed: ${error.message}`);
+        console.error('Upload error:', error);
+        setUploadStatus(`Upload failed: ${error.message}`);
+        return;
 
-      console.log('Upload successful:', data);
-      
+      // Get public URL  
+      const { data: urlData } = supabase.storage
         .from('user-avatars')
         .getPublicUrl(fileName);
 
