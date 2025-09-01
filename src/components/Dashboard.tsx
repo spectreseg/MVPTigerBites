@@ -8,7 +8,7 @@ export default function Dashboard() {
   console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
 
   // Show dashboard with available data (fallback if profile not loaded yet)
-  const displayName = userProfile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayName = userProfile?.full_name || 'Loading...';
   const displayEmail = userProfile?.email || user?.email || '';
   const avatarUrl = userProfile?.avatar_url;
 
