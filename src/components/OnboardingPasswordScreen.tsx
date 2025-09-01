@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import StarryBackground from './StarryBackground';
-import tigerImage from '../assets/tiger3.png';
+import tigerImage from '../assets/tiger6.png';
 
 interface OnboardingPasswordScreenProps {
   onBack: () => void;
