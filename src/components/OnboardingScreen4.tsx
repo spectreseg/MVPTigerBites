@@ -124,8 +124,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(false);
-    } finally {
-      setUploading(false);
     }
   };
 
