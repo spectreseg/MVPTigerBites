@@ -5,8 +5,10 @@ import { useAuthContext } from '../context/AuthContext';
 export default function Dashboard() {
   const { user, userProfile, signOut, loading } = useAuthContext();
 
-  // Show loading if we're still fetching user profile
-  if (loading || !userProfile) {
+  console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
+
+  // Show loading only if we have a user but no profile yet (and not loading forever)
+  if (user && !userProfile && loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -16,6 +18,11 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // If we have a user but no profile (and not loading), show dashboard with fallback data
+  const displayName = userProfile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = userProfile?.email || user?.email || '';
+  const avatarUrl = userProfile?.avatar_url;
 
   const handleSignOut = async () => {
     console.log('Sign out button clicked');
@@ -44,7 +51,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700 font-medium">
-                Welcome, {userProfile.full_name}!
+                Welcome, {displayName}!
               </span>
               <button
                 onClick={handleSignOut}
