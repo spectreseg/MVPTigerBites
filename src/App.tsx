@@ -31,7 +31,7 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <StarryBackground />
-        <div className="relative z-10 text-white text-xl">Loading...</div>
+        <div className="relative z-10 text-white text-xl font-serif">Loading...</div>
       </div>
     );
   }

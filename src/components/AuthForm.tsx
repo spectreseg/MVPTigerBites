@@ -30,7 +30,6 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
@@ -45,8 +44,6 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
       }
     } catch (err) {
       setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 

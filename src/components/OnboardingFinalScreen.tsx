@@ -46,9 +46,11 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
   }, []);
 
   const handleRegistration = async () => {
-    setRegistering(true);
     
     try {
+      setRegistering(true);
+      setError('');
+      
       // Sign up the user
       const { data, error: signUpError } = await signUp(
         registrationData.email,
@@ -57,11 +59,14 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
       );
 
       if (signUpError) {
+        console.error('Signup error:', signUpError);
         setError(signUpError.message);
+        setRegistering(false);
         return;
       }
 
       if (data.user) {
+        console.log('User created, now creating profile...');
         // Create user profile with all data
         const { error: insertError } = await supabase
           .from('users')
@@ -78,6 +83,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         if (insertError) {
           console.error('Error creating user profile:', insertError);
           setError(`Database error: ${insertError.message}`);
+          setRegistering(false);
           return;
         }
 
@@ -88,16 +94,21 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
           avatar_url: registrationData.avatarUrl,
           location_enabled: registrationData.locationEnabled
         });
+        
+        setRegistering(false);
+        
+        // Auto-redirect after 2 seconds on success
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      } else {
+        setError('Registration failed - no user data returned');
+        setRegistering(false);
       }
 
-      // Auto-redirect after 3 seconds on success
-      setTimeout(() => {
-        onComplete();
-      }, 3000);
-
     } catch (err) {
+      console.error('Registration error:', err);
       setError('Registration failed. Please try again.');
-    } finally {
       setRegistering(false);
     }
   };
