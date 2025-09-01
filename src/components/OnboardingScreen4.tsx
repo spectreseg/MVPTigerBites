@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
+// @ts-ignore - heic2any doesn't have perfect TypeScript definitions
+import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -55,15 +57,33 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const convertHeicToJpeg = async (file: File): Promise<File> => {
-    // For HEIC files, we'll need to convert them to JPEG
-    // This is a placeholder - in a real app you'd use a library like heic2any
     if (file.type === 'image/heic' || file.type === 'image/heif' || 
         file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
       
-      // For now, we'll just return the original file
-      // In production, you would use: const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg' });
-      console.log('HEIC file detected - would convert to JPEG in production');
-      return file;
+      try {
+        console.log('Converting HEIC file to JPEG...');
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8 // Good quality while keeping file size reasonable
+        });
+        
+        // heic2any can return an array or single blob
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        
+        // Create a new File object from the converted blob
+        const convertedFile = new File(
+          [blob], 
+          file.name.replace(/\.(heic|heif)$/i, '.jpg'), 
+          { type: 'image/jpeg' }
+        );
+        
+        console.log('HEIC conversion successful');
+        return convertedFile;
+      } catch (error) {
+        console.error('HEIC conversion failed:', error);
+        throw new Error('Failed to convert HEIC image. Please try a different format.');
+      }
     }
     return file;
   };
