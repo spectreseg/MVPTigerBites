@@ -10,13 +10,18 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
         setUser(session?.user ?? null);
         if (session?.user) {
-          fetchUserProfile(session.user.id);
+          fetchUserProfile(session.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+        } else {
+          setLoading(false);
         }
       }
     });
@@ -27,9 +32,12 @@ export function useAuth() {
         if (mounted) {
           setUser(session?.user ?? null);
           if (session?.user) {
+            setLoading(true);
             await fetchUserProfile(session.user.id);
+            setLoading(false);
           } else {
             setUserProfile(null);
+            setLoading(false);
           }
         }
       }

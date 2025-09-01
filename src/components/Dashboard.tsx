@@ -73,9 +73,9 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {userProfile.avatar_url ? (
+                {avatarUrl ? (
                   <img
-                    src={userProfile.avatar_url}
+                    src={avatarUrl}
                     alt="Avatar"
                     className="w-16 h-16 rounded-full object-cover"
                   />
@@ -85,13 +85,13 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {userProfile.full_name}
+                  {displayName}
                 </h3>
-                <p className="text-gray-600">{userProfile.email}</p>
+                <p className="text-gray-600">{displayEmail}</p>
               </div>
             </div>
             
-            {userProfile.location_enabled && (
+            {userProfile?.location_enabled && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span>Location services enabled</span>
@@ -121,7 +121,7 @@ export default function Dashboard() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
                 <span className="text-gray-900">
-                  {new Date(userProfile.created_at).toLocaleDateString()}
+                  {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString() : 'Today'}
                 </span>
               </div>
             </div>
