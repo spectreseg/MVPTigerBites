@@ -41,9 +41,8 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (file) {
       setError('');
-      setUploading(true);
       
-      // Show preview immediately for better UX
+      // Show preview immediately
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
@@ -52,94 +51,79 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       };
       reader.readAsDataURL(file);
       
-      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string, userId?: string) => {
+      // Start upload process in background
+      uploadToSupabase(file);
+    }
+  };
+
+  const uploadToSupabase = async (file: File) => {
+    setUploading(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('User not authenticated');
+        setUploading(false);
+        return;
+      }
+
+      let fileToUpload: File | Blob = file;
+      let fileName = file.name;
+
+      // Handle HEIC conversion if needed
+      if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
         try {
-          // Get current user ID for folder organization
-          const { data: { user } } = await supabase.auth.getUser();
-          const currentUserId = userId || user?.id;
-          
-          // Generate filename
-          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
-          const filePath = `${currentUserId}/avatar.${fileExt}`;
-
-          console.log('Uploading to:', filePath);
-          
-          // Upload to Supabase storage
-          const { error: uploadError } = await supabase.storage
-            .from('user-avatars')
-            .upload(filePath, fileToUpload, {
-              cacheControl: '3600',
-              upsert: true
-            });
-
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            setError(`Upload failed: ${uploadError.message}`);
-            setUploading(false);
-            return;
-          }
-          
-          // Get public URL and update preview
-          const { data: urlData } = supabase.storage
-            .from('user-avatars')
-            .getPublicUrl(filePath);
-
-          if (urlData?.publicUrl) {
-            console.log('Upload successful, URL:', urlData.publicUrl);
-            setSelectedImage(urlData.publicUrl);
-          }
-          
+          console.log('Converting HEIC...');
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8
+          });
+          fileToUpload = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          fileName = 'avatar.jpg';
         } catch (error) {
-          console.error('Upload error:', error);
-          setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-          setUploading(false);
+          console.warn('HEIC conversion failed, using original file:', error);
+          // Continue with original file
         }
-      };
+      }
+
+      // Generate file path
+      const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      console.log('Uploading to:', filePath);
       
-      // Process upload in background without blocking UI
-      const processUpload = async () => {
-        try {
-          // Get current user for file path
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) {
-            console.error('User not authenticated');
-            setUploading(false);
-            return;
-          }
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, fileToUpload, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-          let fileToUpload: File | Blob = file;
-          let fileName = file.name;
-
-          // Handle HEIC conversion if needed
-          if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-            try {
-              console.log('Converting HEIC...');
-              const convertedBlob = await heic2any({
-                blob: file,
-                toType: 'image/jpeg',
-                quality: 0.7
-              });
-              fileToUpload = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-              fileName = 'converted.jpg';
-            } catch (conversionError) {
-              console.error('HEIC conversion failed:', conversionError);
-              // Continue with original file if conversion fails
-            }
-          }
-
-          await processAndUploadFile(fileToUpload, fileName, user.id);
-          
-        } catch (error) {
-          console.error('Upload error:', error);
-          setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-          setUploading(false);
-        }
-      };
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        setError(`Upload failed: ${uploadError.message}`);
+        return;
+      }
       
-      // Start background upload
-      processUpload();
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+
+      if (urlData?.publicUrl) {
+        console.log('Upload successful, URL:', urlData.publicUrl);
+        // Update preview with the actual uploaded URL
+        setSelectedImage(urlData.publicUrl);
+      }
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setUploading(false);
     }
   };
 
