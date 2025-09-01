@@ -43,85 +43,92 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       setError('');
       setUploading(true);
       
+      // Show preview immediately for better UX
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setSelectedImage(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+      
       const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string, userId?: string) => {
         try {
           // Get current user ID for folder organization
           const { data: { user } } = await supabase.auth.getUser();
           const currentUserId = userId || user?.id;
-          
-          if (!currentUserId) {
-            throw new Error('User not authenticated');
+      // Process upload in background without blocking UI
+      const processUpload = async () => {
+        try {
+          // Get current user for file path
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            console.error('User not authenticated');
+            setUploading(false);
+            return;
           }
-          
-          // Generate filename with user folder structure
-          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
-          const fileName = `avatar.${fileExt}`;
-          const filePath = `${currentUserId}/${fileName}`;
 
-          console.log('Starting upload for file:', filePath);
+          let fileToUpload: File | Blob = file;
+          let fileName = file.name;
+
+          // Handle HEIC conversion if needed
+          if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+            try {
+              console.log('Converting HEIC...');
+              const convertedBlob = await heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.7
+              });
+              fileToUpload = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+              fileName = 'converted.jpg';
+            } catch (conversionError) {
+              console.error('HEIC conversion failed:', conversionError);
+              // Continue with original file if conversion fails
+            }
+          }
+
+          // Generate filename
+          const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+          const filePath = `${user.id}/avatar.${fileExt}`;
+
+          console.log('Uploading to:', filePath);
           
-          // Upload to dedicated user-avatars bucket
+          // Upload to Supabase storage
           const { error: uploadError } = await supabase.storage
             .from('user-avatars')
             .upload(filePath, fileToUpload, {
               cacheControl: '3600',
-              upsert: true // Replace existing avatar
+              upsert: true
             });
 
           if (uploadError) {
             console.error('Upload error:', uploadError);
-            throw uploadError;
+            setError(`Upload failed: ${uploadError.message}`);
+            setUploading(false);
+            return;
           }
           
-          console.log('Upload successful for path:', filePath);
-
-          // Get public URL
+          // Get public URL and update preview
           const { data: urlData } = supabase.storage
             .from('user-avatars')
             .getPublicUrl(filePath);
 
           if (urlData?.publicUrl) {
+            console.log('Upload successful, URL:', urlData.publicUrl);
             setSelectedImage(urlData.publicUrl);
-            console.log('Image uploaded successfully:', urlData.publicUrl);
-          } else {
-            throw new Error('Could not get public URL');
           }
           
         } catch (error) {
-          console.error('Upload process error:', error);
+          console.error('Upload error:', error);
           setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
           setUploading(false);
         }
       };
       
-      // Check if file is HEIC format
-      const fileName = file.name.toLowerCase();
-      const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
-      
-      if (isHeic) {
-        // Convert HEIC to JPEG using heic2any
-        console.log('Converting HEIC file...');
-        
-        heic2any({
-          blob: file,
-          toType: 'image/jpeg'
-        })
-        .then((convertedBlob) => {
-          console.log('HEIC conversion successful');
-          // heic2any returns either a Blob or Blob[]
-          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-          processAndUploadFile(blob, 'converted.jpg');
-        })
-        .catch((error) => {
-          console.error('HEIC conversion error:', error);
-          setError('HEIC conversion failed. Please try a different image format.');
-          setUploading(false);
-        });
-      } else {
-        // Handle regular image files - upload directly
-        processAndUploadFile(file, file.name);
-      }
+      // Start background upload
+      processUpload();
     }
   };
 
