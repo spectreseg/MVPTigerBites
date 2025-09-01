@@ -88,6 +88,9 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
           </div>
         </div>
 
+        {/* Gap below tiger */}
+        <div className="h-8 md:h-12"></div>
+
         {/* Buttons container */}
         <div className="w-full max-w-6xl mx-auto mb-4">
           {/* Use my location button */}
@@ -98,15 +101,14 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
           >
             <button
               onClick={handleUseLocation}
-              className="w-full bg-gray-200 text-gray-800 px-6 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300"
+              className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300"
             >
               Use my location
             </button>
           </div>
 
           {/* Back and Proceed buttons */}
-          <div className="w-full max-w-6xl mx-auto mb-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-8">
               {/* Back */}
               <div
                 className={`order-2 md:order-1 flex justify-center md:justify-end transition-all duration-700 ease-out ${
@@ -134,7 +136,6 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
                   Proceed
                 </button>
               </div>
-            </div>
           </div>
         </div>
       </div>
