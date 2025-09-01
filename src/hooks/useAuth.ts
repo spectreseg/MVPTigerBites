@@ -53,7 +53,7 @@ export function useAuth() {
 
       if (error) {
         console.error('User profile error:', error);
-        // If user profile doesn't exist, that's okay - they might be new
+        console.log('User profile not found - this is normal for new users');
         setUserProfile(null);
       } else {
         console.log('User profile loaded:', data);

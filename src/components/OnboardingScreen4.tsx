@@ -41,6 +41,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (file) {
       setError('');
+      setUploading(true);
       
       // Show preview immediately
       const reader = new FileReader();
@@ -57,8 +58,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const uploadToSupabase = async (file: File) => {
-    setUploading(true);
-    
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,6 +104,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       if (uploadError) {
         console.error('Upload error:', uploadError);
         setError(`Upload failed: ${uploadError.message}`);
+        setUploading(false);
         return;
       }
       
@@ -115,8 +115,8 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
       if (urlData?.publicUrl) {
         console.log('Upload successful, URL:', urlData.publicUrl);
-        // Update preview with the actual uploaded URL
-        setSelectedImage(urlData.publicUrl);
+        // Keep the preview as is, but store the URL for later use
+        // The preview will remain the local file preview for better UX
       }
       
     } catch (error) {
@@ -124,11 +124,43 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(false);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleProceed = async () => {
+    // If we have a selected image, get the Supabase URL
+    let avatarUrl = '';
+    
+    if (selectedImage && !selectedImage.startsWith('data:')) {
+      // Already have a Supabase URL
+      avatarUrl = selectedImage;
+    } else if (selectedImage) {
+      // We have a local preview, need to get the Supabase URL
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: urlData } = supabase.storage
+            .from('user-avatars')
+            .getPublicUrl(`${user.id}/avatar.jpg`);
+          
+          if (urlData?.publicUrl) {
+            avatarUrl = urlData.publicUrl;
+          }
+        }
+      } catch (error) {
+        console.error('Error getting avatar URL:', error);
+      }
+    }
+    
+    onProceed({
+      avatarUrl
+    });
   };
 
   return (
@@ -218,19 +250,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
               {/* Show selected image preview */}
               {selectedImage && (
                 <div className="mt-3 flex justify-center">
-                  {selectedImage.startsWith('http') ? (
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
-                      <img
-                        src={selectedImage}
-                        alt="Avatar preview"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-green-100 border-2 border-green-300 shadow-lg flex items-center justify-center">
-                      <span className="text-green-600 text-xs font-medium">✓ Uploaded</span>
-                    </div>
-                  )}
+                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
+                    <img
+                      src={selectedImage}
+                      alt="Avatar preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
               )}
               
