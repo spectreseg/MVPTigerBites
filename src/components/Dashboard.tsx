@@ -34,7 +34,7 @@ export default function Dashboard() {
       console.log('Creating signed URL for avatar path:', avatarPath);
       // Generate signed URL for private avatar
       const { data, error } = await supabase.storage
-        .from('avatars')
+        .from('user-avatars')
         .createSignedUrl(avatarPath, 3600); // 1 hour expiry
 
       if (error) {

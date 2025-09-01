@@ -64,7 +64,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
       // Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('user-avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
