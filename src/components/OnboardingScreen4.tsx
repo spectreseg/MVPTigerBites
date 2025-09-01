@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
-import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
+import tigerImage from '../assets/tiger4.png';
+import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -35,53 +36,50 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
       
       if (isHeic) {
-        // Convert HEIC to JPEG using browser's built-in capabilities
-        const img = new Image();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // Convert HEIC to JPEG using heic2any
+        console.log('Converting HEIC file...');
         
-        if (!ctx) {
-          alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
-          return;
-        }
-
-        // Create object URL for the HEIC file
-        const objectUrl = URL.createObjectURL(file);
-        
-        img.onload = () => {
-          // Set canvas dimensions
-          canvas.width = img.width;
-          canvas.height = img.height;
+        heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.7
+        })
+        .then((convertedBlob) => {
+          console.log('HEIC conversion successful');
+          // heic2any returns either a Blob or Blob[]
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
           
-          // Draw image to canvas
-          ctx.drawImage(img, 0, 0);
-          
-          // Convert to JPEG and create preview
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                setSelectedImage(e.target?.result as string);
-              };
-              reader.readAsDataURL(blob);
+          // Create preview from converted blob
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              setSelectedImage(e.target.result as string);
+              console.log('HEIC preview created successfully');
             }
-          }, 'image/jpeg', 0.8);
-          
-          // Clean up
-          URL.revokeObjectURL(objectUrl);
-        };
-        
-        img.onerror = () => {
-          URL.revokeObjectURL(objectUrl);
-          alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
-        };
-        
-        img.src = objectUrl;
+          };
+          reader.onerror = () => {
+            console.error('Failed to read converted blob');
+            alert('Error creating preview. Please try a different image.');
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch((error) => {
+          console.error('HEIC conversion error:', error);
+          alert('Unable to convert HEIC file. Please try uploading a JPG or PNG instead.');
+        });
       } else {
         // Handle regular image files
+        console.log('Processing regular image file...');
         const reader = new FileReader();
         reader.onload = (e) => {
-          setSelectedImage(e.target?.result as string);
+          if (e.target?.result) {
+            setSelectedImage(e.target.result as string);
+            console.log('Regular image preview created successfully');
+          }
+        };
+        reader.onerror = () => {
+          console.error('Failed to read image file');
+          alert('Error reading image file. Please try a different image.');
         };
         reader.readAsDataURL(file);
       }
