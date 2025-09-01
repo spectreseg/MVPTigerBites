@@ -6,10 +6,23 @@ import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
   const { user, userProfile, signOut, loading } = useAuthContext();
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   // Show dashboard with available data (fallback if profile not loaded yet)
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || userProfile?.full_name || 'Loading...';
   const displayEmail = userProfile?.email || user?.email || '';
+
+  useEffect(() => {
+    const loadAvatar = async () => {
+      if (userProfile?.avatar_url && userProfile.avatar_url.trim()) {
+        setAvatarUrl(userProfile.avatar_url);
+      } else {
+        setAvatarUrl('');
+      }
+    };
+
+    loadAvatar();
+  }, [userProfile?.avatar_url]);
 
   const handleSignOut = async () => {
     console.log('Sign out button clicked');
@@ -60,9 +73,9 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {userProfile?.avatar_url ? (
+                {avatarUrl ? (
                   <img
-                    src={userProfile.avatar_url}
+                    src={avatarUrl}
                     alt="Avatar"
                     className="w-16 h-16 rounded-full object-cover"
                   />
