@@ -34,7 +34,7 @@ export default function OnboardingFinalScreen({ onComplete }: OnboardingFinalScr
   }, [onComplete]);
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden md:overflow-y-hidden">
       {/* Starry background */}
       <StarryBackground />
       
