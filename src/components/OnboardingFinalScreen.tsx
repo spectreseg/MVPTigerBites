@@ -65,11 +65,11 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         // Create user profile with all data
         const { error: insertError } = await supabase
           .from('users')
-          .insert({
+          .upsert({
             id: data.user.id,
             email: registrationData.email,
             full_name: registrationData.fullName,
-            avatar_url: registrationData.avatarUrl,
+            avatar_url: registrationData.avatarUrl || null,
             location_enabled: registrationData.locationEnabled,
             latitude: registrationData.latitude,
             longitude: registrationData.longitude,
@@ -77,22 +77,17 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
 
         if (insertError) {
           console.error('Error creating user profile:', insertError);
-          setError('Database error saving new user');
+          setError(`Database error: ${insertError.message}`);
           return;
         }
 
-        // Also update user profile state for immediate use
-        const profileData = {
+        console.log('User profile created successfully:', {
           id: data.user.id,
           email: registrationData.email,
           full_name: registrationData.fullName,
           avatar_url: registrationData.avatarUrl,
-          location_enabled: registrationData.locationEnabled,
-          latitude: registrationData.latitude,
-          longitude: registrationData.longitude,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+          location_enabled: registrationData.locationEnabled
+        });
       }
 
       // Auto-redirect after 3 seconds on success

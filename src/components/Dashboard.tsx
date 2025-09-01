@@ -56,7 +56,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {userProfile?.full_name}
+                  {userProfile?.full_name || 'User'}
                 </h3>
                 <p className="text-gray-600">{userProfile?.email}</p>
               </div>
