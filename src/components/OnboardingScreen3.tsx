@@ -137,3 +137,5 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
   )
 }
 }
+  )
+}
