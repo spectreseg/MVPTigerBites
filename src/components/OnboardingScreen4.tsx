@@ -52,11 +52,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       };
       reader.readAsDataURL(file);
       
-      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string, userId?: string) => {
-        try {
-          // Get current user ID for folder organization
-          const { data: { user } } = await supabase.auth.getUser();
-          const currentUserId = userId || user?.id;
       // Process upload in background without blocking UI
       const processUpload = async () => {
         try {
