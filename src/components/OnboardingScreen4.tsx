@@ -15,7 +15,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [avatarPath, setAvatarPath] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,38 +35,52 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('File selected:', file.name, file.size, file.type);
     setUploading(true);
-    setUploadSuccess(false);
+    setUploadStatus('Starting upload...');
 
     try {
-      // Show preview immediately
+      // Show preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
 
+      setUploadStatus('Getting user...');
+      
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error(`Auth error: ${userError?.message || 'No user'}`);
+      }
+
+      console.log('User ID:', user.id);
+      setUploadStatus('Uploading to storage...');
 
       // Simple file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      const fileName = `avatar-${Date.now()}.${file.name.split('.').pop()}`;
       const filePath = `${user.id}/${fileName}`;
 
+      console.log('Uploading to path:', filePath);
+
       // Upload to user-avatars bucket
-      const { error } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('user-avatars')
         .upload(filePath, file);
 
-      if (error) throw error;
+      console.log('Upload result:', { data, error });
+
+      if (error) {
+        throw new Error(`Upload failed: ${error.message}`);
+      }
 
       setAvatarPath(filePath);
-      setUploadSuccess(true);
+      setUploadStatus('✓ Upload successful!');
       
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('Upload error:', error);
+      setUploadStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setSelectedImage(null);
       setAvatarPath('');
     } finally {
@@ -146,22 +160,23 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : uploadSuccess ? 'Change Avatar' : 'Upload Avatar'}
+                {uploading ? 'Uploading...' : avatarPath ? 'Change Avatar' : 'Upload Avatar'}
               </button>
               
               {/* Status */}
-              {uploading && (
+              {uploadStatus && (
                 <div className="mt-3 text-center">
-                  <div className="text-blue-400 text-sm">Processing...</div>
+                  <div className={`text-sm ${uploadStatus.includes('Error') ? 'text-red-400' : uploadStatus.includes('✓') ? 'text-green-400' : 'text-blue-400'}`}>
+                    {uploadStatus}
+                  </div>
                 </div>
               )}
               
-              {uploadSuccess && selectedImage && (
+              {selectedImage && (
                 <div className="mt-3 flex flex-col items-center">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
                     <img src={selectedImage} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
-                  <p className="text-green-400 text-sm mt-2">✓ Ready to proceed!</p>
                 </div>
               )}
             </div>
