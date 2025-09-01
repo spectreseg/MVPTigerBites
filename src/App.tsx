@@ -4,11 +4,12 @@ import AuthForm from './components/AuthForm';
 import RegistrationScreen from './components/RegistrationScreen';
 import OnboardingScreen2 from './components/OnboardingScreen2';
 import OnboardingScreen3 from './components/OnboardingScreen3';
+import OnboardingScreen4 from './components/OnboardingScreen4';
 import StarryBackground from './components/StarryBackground';
 import tigerImage from './assets/tiger.png';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding3'>('login');
+  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding3' | 'onboarding4'>('login');
 
   const handleAuthModeChange = (mode: 'login' | 'register') => {
     if (mode === 'register') {
@@ -30,6 +31,10 @@ function App() {
     setCurrentScreen('onboarding3');
   };
 
+  const handleProceedToOnboarding4 = () => {
+    setCurrentScreen('onboarding4');
+  };
+
   const handleProceedToOnboarding2 = () => {
     setCurrentScreen('onboarding2');
   };
@@ -40,6 +45,10 @@ function App() {
 
   const handleBackFromOnboarding3 = () => {
     setCurrentScreen('onboarding2');
+  };
+
+  const handleBackFromOnboarding4 = () => {
+    setCurrentScreen('onboarding3');
   };
 
   // Show registration screen when register is selected
@@ -67,6 +76,16 @@ function App() {
     return (
       <OnboardingScreen3 
         onBack={handleBackFromOnboarding3}
+        onProceed={handleProceedToOnboarding4}
+      />
+    );
+  }
+
+  // Show onboarding screen 4
+  if (currentScreen === 'onboarding4') {
+    return (
+      <OnboardingScreen4 
+        onBack={handleBackFromOnboarding4}
         onProceed={handleProceedToRegistration}
       />
     );
