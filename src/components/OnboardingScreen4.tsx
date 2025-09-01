@@ -16,7 +16,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [avatarPath, setAvatarPath] = useState<string>('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,54 +35,62 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('File selected:', file.name, file.size, file.type);
+    console.log('Starting upload for file:', file.name);
     setUploading(true);
-    setUploadStatus('Starting upload...');
+    setUploadStatus('Getting user info...');
 
     try {
-      // Show preview
+      // Show preview immediately
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
 
-      setUploadStatus('Getting user...');
-      
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        throw new Error(`Auth error: ${userError?.message || 'No user'}`);
+        throw new Error('Not authenticated');
       }
 
-      console.log('User ID:', user.id);
       setUploadStatus('Uploading to storage...');
+      
+      // Create simple file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      
+      console.log('Uploading to user-avatars bucket with path:', fileName);
 
-      // Simple file path
-      const fileName = `avatar-${Date.now()}.${file.name.split('.').pop()}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      console.log('Uploading to path:', filePath);
-
-      // Upload to user-avatars bucket
+      // Upload to public bucket (user-avatars)
       const { data, error } = await supabase.storage
         .from('user-avatars')
-        .upload(filePath, file);
-
-      console.log('Upload result:', { data, error });
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
       if (error) {
+        console.error('Upload error:', error);
         throw new Error(`Upload failed: ${error.message}`);
       }
 
-      setAvatarPath(filePath);
+      console.log('Upload successful:', data);
+      
+      // Get public URL since bucket is public
+      const { data: urlData } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(fileName);
+
+      console.log('Public URL:', urlData.publicUrl);
+      
+      setAvatarUrl(urlData.publicUrl);
       setUploadStatus('✓ Upload successful!');
       
     } catch (error) {
       console.error('Upload error:', error);
       setUploadStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setSelectedImage(null);
-      setAvatarPath('');
+      setAvatarUrl('');
     } finally {
       setUploading(false);
     }
@@ -93,7 +101,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const handleProceed = () => {
-    onProceed({ avatarUrl: avatarPath });
+    onProceed({ avatarUrl });
   };
 
   return (
@@ -160,22 +168,27 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : avatarPath ? 'Change Avatar' : 'Upload Avatar'}
+                {uploading ? 'Uploading...' : avatarUrl ? 'Change Avatar' : 'Upload Avatar'}
               </button>
               
               {/* Status */}
               {uploadStatus && (
                 <div className="mt-3 text-center">
-                  <div className={`text-sm ${uploadStatus.includes('Error') ? 'text-red-400' : uploadStatus.includes('✓') ? 'text-green-400' : 'text-blue-400'}`}>
+                  <div className={`text-sm px-3 py-2 rounded-lg ${
+                    uploadStatus.includes('Error') ? 'text-red-400 bg-red-900/20' : 
+                    uploadStatus.includes('✓') ? 'text-green-400 bg-green-900/20' : 
+                    'text-blue-400 bg-blue-900/20'
+                  }`}>
                     {uploadStatus}
                   </div>
                 </div>
               )}
               
+              {/* Preview */}
               {selectedImage && (
                 <div className="mt-3 flex flex-col items-center">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
-                    <img src={selectedImage} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={selectedImage} alt="Avatar Preview" className="w-full h-full object-cover" />
                   </div>
                 </div>
               )}

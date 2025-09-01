@@ -6,51 +6,6 @@ import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
   const { user, userProfile, signOut, loading } = useAuthContext();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [loadingAvatar, setLoadingAvatar] = useState(false);
-
-  console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
-  console.log('Avatar URL from profile:', userProfile?.avatar_url);
-
-  // Load avatar when userProfile changes
-  useEffect(() => {
-    if (userProfile?.avatar_url && userProfile.avatar_url.trim() !== '') {
-      console.log('Loading avatar for path:', userProfile.avatar_url);
-      loadAvatar(userProfile.avatar_url);
-    } else {
-      console.log('No avatar URL found in profile');
-      setAvatarUrl(null);
-    }
-  }, [userProfile?.avatar_url]);
-
-  const loadAvatar = async (avatarPath: string) => {
-    if (!avatarPath || avatarPath.trim() === '') {
-      setAvatarUrl(null);
-      return;
-    }
-    
-    setLoadingAvatar(true);
-    try {
-      console.log('Creating signed URL for avatar path:', avatarPath);
-      // Generate signed URL for private avatar
-      const { data, error } = await supabase.storage
-        .from('user-avatars')
-        .createSignedUrl(avatarPath, 3600); // 1 hour expiry
-
-      if (error) {
-        console.error('Error creating signed URL:', error);
-        setAvatarUrl(null);
-      } else {
-        console.log('Generated signed URL:', data.signedUrl);
-        setAvatarUrl(data.signedUrl);
-      }
-    } catch (error) {
-      console.error('Error loading avatar:', error);
-      setAvatarUrl(null);
-    } finally {
-      setLoadingAvatar(false);
-    }
-  };
 
   // Show dashboard with available data (fallback if profile not loaded yet)
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || userProfile?.full_name || 'Loading...';
@@ -105,11 +60,9 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {loadingAvatar ? (
-                  <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                ) : avatarUrl ? (
+                {userProfile?.avatar_url ? (
                   <img
-                    src={avatarUrl}
+                    src={userProfile.avatar_url}
                     alt="Avatar"
                     className="w-16 h-16 rounded-full object-cover"
                   />
