@@ -43,10 +43,10 @@ export default function OnboardingFinalScreen({ onComplete }: OnboardingFinalScr
         
         {/* Thank you message */}
         <div className={`text-center mb-8 md:mb-12 transition-all duration-700 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium mb-4">
+          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide mb-4">
             Thanks for registering!
           </h1>
-          <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium">
+          <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide">
             Redirecting to dashboard...
           </p>
         </div>
