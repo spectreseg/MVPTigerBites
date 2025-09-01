@@ -3,6 +3,7 @@ import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
 import heic2any from 'heic2any';
+import { supabase } from '../lib/supabase';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -39,6 +40,49 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     const file = event.target.files?.[0];
     if (file) {
       setUploading(true);
+      
+      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string) => {
+        try {
+          // Generate unique filename
+          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          // Upload to Supabase storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, fileToUpload, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            alert('Failed to upload image. Please try again.');
+            setUploading(false);
+            return;
+          }
+
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+          if (urlData?.publicUrl) {
+            setSelectedImage(urlData.publicUrl);
+            console.log('Image uploaded successfully:', urlData.publicUrl);
+          } else {
+            alert('Failed to get image URL. Please try again.');
+          }
+          
+        } catch (error) {
+          console.error('Upload process error:', error);
+          alert('Failed to upload image. Please try again.');
+        } finally {
+          setUploading(false);
+        }
+      };
+      
       // Check if file is HEIC format
       const fileName = file.name.toLowerCase();
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
@@ -50,45 +94,22 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
         heic2any({
           blob: file,
           toType: 'image/jpeg',
-          quality: 0.7
+          quality: 0.8
         })
         .then((convertedBlob) => {
           console.log('HEIC conversion successful');
           // heic2any returns either a Blob or Blob[]
           const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-          
-          // Create preview from converted blob
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            if (e.target?.result) {
-              setSelectedImage(e.target.result as string);
-            }
-            setUploading(false);
-          };
-          reader.onerror = () => {
-            alert('Error creating preview. Please try a different image.');
-            setUploading(false);
-          };
-          reader.readAsDataURL(blob);
+          processAndUploadFile(blob, 'converted.jpg');
         })
         .catch((error) => {
+          console.error('HEIC conversion error:', error);
           alert('Unable to convert HEIC file. Please try uploading a JPG or PNG instead.');
           setUploading(false);
         });
       } else {
-        // Handle regular image files
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            setSelectedImage(e.target.result as string);
-          }
-          setUploading(false);
-        };
-        reader.onerror = () => {
-          alert('Error reading image file. Please try a different image.');
-          setUploading(false);
-        };
-        reader.readAsDataURL(file);
+        // Handle regular image files - upload directly
+        processAndUploadFile(file, file.name);
       }
     }
   };
