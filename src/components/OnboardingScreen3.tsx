@@ -94,49 +94,49 @@ export default function OnboardingScreen3({ onBack, onProceed }: OnboardingScree
 
         {/* Buttons container */}
         <div className="w-full max-w-6xl mx-auto mb-4">
-          {/* Use my location button */}
-          <div
-            className={`w-full max-w-md mx-auto mb-6 transition-all duration-700 ease-out ${
-              buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-            }`}
-          >
-            <button
-              onClick={handleUseLocation}
-              className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300"
+          {/* All buttons on same level - mobile: stacked, desktop: side by side */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-8">
+            {/* Back button */}
+            <div
+              className={`order-3 md:order-1 flex justify-center transition-all duration-700 ease-out ${
+                buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+              }`}
             >
-              Use my location
-            </button>
-          </div>
-
-          {/* Back and Proceed buttons */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-center md:gap-52">
-              {/* Back */}
-              <div
-                className={`order-2 md:order-1 flex justify-center md:justify-end transition-all duration-700 ease-out ${
-                  buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-                }`}
+              <button
+                onClick={onBack}
+                className="bg-white text-purple-600 px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-300 min-w-[120px] w-full md:w-auto"
               >
-                <button
-                  onClick={onBack}
-                  className="bg-white text-purple-600 px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-300 min-w-[120px] w-full md:w-auto"
-                >
-                  Back
-                </button>
-              </div>
+                Back
+              </button>
+            </div>
 
-              {/* Proceed */}
-              <div
-                className={`order-1 md:order-2 flex justify-center md:justify-start transition-all duration-700 ease-out ${
-                  buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-                }`}
+            {/* Use my location button */}
+            <div
+              className={`order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 transition-all duration-700 ease-out ${
+                buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+              }`}
+            >
+              <button
+                onClick={handleUseLocation}
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300"
               >
-                <button
-                  onClick={onProceed}
-                  className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
-                >
-                  Proceed
-                </button>
-              </div>
+                Use my location
+              </button>
+            </div>
+
+            {/* Proceed button */}
+            <div
+              className={`order-2 md:order-3 flex justify-center transition-all duration-700 ease-out ${
+                buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+              }`}
+            >
+              <button
+                onClick={onProceed}
+                className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
+              >
+                Proceed
+              </button>
+            </div>
           </div>
         </div>
       </div>
