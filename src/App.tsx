@@ -28,7 +28,9 @@ function AppContent() {
 
   // Reset to login screen when user signs out
   React.useEffect(() => {
+    console.log('User state changed:', user);
     if (!user) {
+      console.log('No user, setting screen to login');
       setCurrentScreen('login');
     }
   }, [user]);

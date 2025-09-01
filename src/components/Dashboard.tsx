@@ -6,12 +6,14 @@ export default function Dashboard() {
   const { user, userProfile, signOut } = useAuthContext();
 
   const handleSignOut = async () => {
+    console.log('Sign out button clicked');
     try {
       const { error } = await signOut();
       if (error) {
         console.error('Sign out error:', error);
+      } else {
+        console.log('Sign out successful');
       }
-      // The auth state change will automatically redirect to login
     } catch (err) {
       console.error('Unexpected sign out error:', err);
     }
