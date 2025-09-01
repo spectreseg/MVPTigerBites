@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
+import { supabase } from '../lib/supabase';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -14,6 +15,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,20 +30,44 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
+    setUploadStatus('Uploading...');
 
-    // Just use the file as a data URL for now - no Supabase upload
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setSelectedImage(result);
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('user-avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(fileName);
+
+      setSelectedImage(publicUrl);
+      setUploadStatus('Upload successful!');
+      
+    } catch (error: any) {
+      setUploadStatus(`Upload failed: ${error.message}`);
+      setSelectedImage(null);
+    } finally {
       setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleUploadClick = () => {
@@ -49,7 +75,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   };
 
   const handleProceed = () => {
-    // Pass the data URL or empty string
     onProceed({ avatarUrl: selectedImage || '' });
   };
 
@@ -121,8 +146,15 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-5 h-5" />
-                {uploading ? 'Processing...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
+                {uploading ? 'Uploading...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
               </button>
+              
+              {/* Status message */}
+              {uploadStatus && (
+                <p className={`mt-2 text-sm text-center ${uploadStatus.includes('failed') ? 'text-red-400' : 'text-green-400'}`}>
+                  {uploadStatus}
+                </p>
+              )}
               
               {/* Preview */}
               {selectedImage && (
