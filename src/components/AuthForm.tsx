@@ -31,6 +31,7 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
       const { error } = await signIn(formData.email, formData.password);
@@ -44,6 +45,8 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
       }
     } catch (err) {
       setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 

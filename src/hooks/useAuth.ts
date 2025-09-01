@@ -6,38 +6,43 @@ import type { User } from '../lib/supabase';
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setLoading(false);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        }
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setUserProfile(null);
-          setLoading(false);
+        if (mounted) {
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            await fetchUserProfile(session.user.id);
+          } else {
+            setUserProfile(null);
+          }
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -45,44 +50,40 @@ export function useAuth() {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.log('User profile not found or error:', error);
         // If user profile doesn't exist, that's okay - they might be new
-        if (error.code !== 'PGRST116') {
-          console.error('Unexpected error:', error);
-        }
       } else {
+        console.log('User profile loaded:', data);
         setUserProfile(data);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       return { data, error };
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Sign in error:', err);
+      return { data: null, error: err };
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       return { data, error };
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Sign up error:', err);
+      return { data: null, error: err };
     }
   };
 

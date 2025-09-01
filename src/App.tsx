@@ -26,16 +26,6 @@ function AppContent() {
   
   const { user, loading } = useAuthContext();
 
-  // Show loading screen while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <StarryBackground />
-        <div className="relative z-10 text-white text-xl font-serif">Loading...</div>
-      </div>
-    );
-  }
-
   // Show dashboard if user is authenticated
   if (user) {
     return <Dashboard />;
