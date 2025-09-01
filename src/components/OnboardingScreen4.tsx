@@ -13,6 +13,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,20 +28,86 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
+  const validateImageFile = (file: File): boolean => {
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/bmp',
+      'image/tiff',
+      'image/svg+xml',
+      'image/heic',
+      'image/heif'
+    ];
+    
+    const allowedExtensions = [
+      '.jpg', '.jpeg', '.png', '.webp', '.gif', 
+      '.bmp', '.tiff', '.tif', '.svg', '.heic', '.heif'
+    ];
+    
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    const hasValidMimeType = allowedTypes.includes(file.type.toLowerCase());
+    
+    return hasValidExtension || hasValidMimeType;
+  };
+
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    // For HEIC files, we'll need to convert them to JPEG
+    // This is a placeholder - in a real app you'd use a library like heic2any
+    if (file.type === 'image/heic' || file.type === 'image/heif' || 
+        file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+      
+      // For now, we'll just return the original file
+      // In production, you would use: const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg' });
+      console.log('HEIC file detected - would convert to JPEG in production');
+      return file;
+    }
+    return file;
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Clear previous errors
+      setUploadError('');
+      
+      // Validate file type
+      if (!validateImageFile(file)) {
+        setUploadError('Please select a valid image file (JPEG, PNG, WebP, GIF, BMP, TIFF, SVG, or HEIC)');
+        return;
+      }
+      
+      // Check file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        setUploadError('File size must be less than 10MB');
+        return;
+      }
+      
+      // Convert HEIC if needed and read file
+      convertHeicToJpeg(file).then(processedFile => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setSelectedImage(e.target?.result as string);
+        };
+        reader.onerror = () => {
+          setUploadError('Error reading file. Please try again.');
+        };
+        reader.readAsDataURL(processedFile);
+      }).catch(() => {
+        setUploadError('Error processing image. Please try again.');
+      });
     }
   };
 
   const handleUploadClick = () => {
+    setUploadError(''); // Clear any previous errors
     fileInputRef.current?.click();
   };
+
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -114,7 +181,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.tiff,.tif,.svg,.heic,.heif,image/*"
                 className="hidden"
               />
               <button
@@ -124,6 +191,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 <Upload className="w-5 h-5" />
                 Upload
               </button>
+              
+              {/* Show upload error */}
+              {uploadError && (
+                <div className="mt-2 text-red-500 text-sm text-center">
+                  {uploadError}
+                </div>
+              )}
               
               {/* Show selected image preview */}
               {selectedImage && (
