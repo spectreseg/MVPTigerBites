@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger5.png';
 
@@ -61,23 +62,37 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
       }
 
       if (data.user) {
-        // Update user profile with additional data
-        const profileUpdates: any = {
+        // Create user profile with all data
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            email: registrationData.email,
+            full_name: registrationData.fullName,
+            avatar_url: registrationData.avatarUrl,
+            location_enabled: registrationData.locationEnabled,
+            latitude: registrationData.latitude,
+            longitude: registrationData.longitude,
+          });
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError);
+          setError('Database error saving new user');
+          return;
+        }
+
+        // Also update user profile state for immediate use
+        const profileData = {
+          id: data.user.id,
+          email: registrationData.email,
+          full_name: registrationData.fullName,
           avatar_url: registrationData.avatarUrl,
           location_enabled: registrationData.locationEnabled,
+          latitude: registrationData.latitude,
+          longitude: registrationData.longitude,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
-
-        if (registrationData.latitude && registrationData.longitude) {
-          profileUpdates.latitude = registrationData.latitude;
-          profileUpdates.longitude = registrationData.longitude;
-        }
-
-        const { error: updateError } = await updateUserProfile(profileUpdates);
-        
-        if (updateError) {
-          console.error('Error updating profile:', updateError);
-          // Don't show error to user as main registration succeeded
-        }
       }
 
       // Auto-redirect after 3 seconds on success
