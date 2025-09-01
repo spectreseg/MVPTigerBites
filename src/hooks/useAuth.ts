@@ -88,8 +88,18 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        // Clear user state immediately
+        setUser(null);
+        setUserProfile(null);
+      }
+      return { error };
+    } catch (err) {
+      console.error('Sign out error:', err);
+      return { error: err };
+    }
   };
 
   const updateUserProfile = async (updates: Partial<User>) => {

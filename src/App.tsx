@@ -26,6 +26,13 @@ function AppContent() {
   
   const { user, loading } = useAuthContext();
 
+  // Reset to login screen when user signs out
+  React.useEffect(() => {
+    if (!user) {
+      setCurrentScreen('login');
+    }
+  }, [user]);
+
   // Show dashboard if user is authenticated
   if (user) {
     return <Dashboard />;
