@@ -52,6 +52,51 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       };
       reader.readAsDataURL(file);
       
+      const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string, userId?: string) => {
+        try {
+          // Get current user ID for folder organization
+          const { data: { user } } = await supabase.auth.getUser();
+          const currentUserId = userId || user?.id;
+          
+          // Generate filename
+          const fileExt = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
+          const filePath = `${currentUserId}/avatar.${fileExt}`;
+
+          console.log('Uploading to:', filePath);
+          
+          // Upload to Supabase storage
+          const { error: uploadError } = await supabase.storage
+            .from('user-avatars')
+            .upload(filePath, fileToUpload, {
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            setError(`Upload failed: ${uploadError.message}`);
+            setUploading(false);
+            return;
+          }
+          
+          // Get public URL and update preview
+          const { data: urlData } = supabase.storage
+            .from('user-avatars')
+            .getPublicUrl(filePath);
+
+          if (urlData?.publicUrl) {
+            console.log('Upload successful, URL:', urlData.publicUrl);
+            setSelectedImage(urlData.publicUrl);
+          }
+          
+        } catch (error) {
+          console.error('Upload error:', error);
+          setError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+          setUploading(false);
+        }
+      };
+      
       // Process upload in background without blocking UI
       const processUpload = async () => {
         try {
@@ -83,36 +128,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
             }
           }
 
-          // Generate filename
-          const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
-          const filePath = `${user.id}/avatar.${fileExt}`;
-
-          console.log('Uploading to:', filePath);
-          
-          // Upload to Supabase storage
-          const { error: uploadError } = await supabase.storage
-            .from('user-avatars')
-            .upload(filePath, fileToUpload, {
-              cacheControl: '3600',
-              upsert: true
-            });
-
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            setError(`Upload failed: ${uploadError.message}`);
-            setUploading(false);
-            return;
-          }
-          
-          // Get public URL and update preview
-          const { data: urlData } = supabase.storage
-            .from('user-avatars')
-            .getPublicUrl(filePath);
-
-          if (urlData?.publicUrl) {
-            console.log('Upload successful, URL:', urlData.publicUrl);
-            setSelectedImage(urlData.publicUrl);
-          }
+          await processAndUploadFile(fileToUpload, fileName, user.id);
           
         } catch (error) {
           console.error('Upload error:', error);
