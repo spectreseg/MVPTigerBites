@@ -85,6 +85,12 @@ export function useAuth() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            display_name: fullName
+          }
+        }
       });
       return { data, error };
     } catch (err) {

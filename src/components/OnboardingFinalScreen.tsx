@@ -67,6 +67,19 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
 
       if (data.user) {
         console.log('User created, now creating profile...');
+        
+        // Update the auth user's display name
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: { 
+            full_name: registrationData.fullName,
+            display_name: registrationData.fullName 
+          }
+        });
+        
+        if (updateError) {
+          console.error('Error updating user metadata:', updateError);
+        }
+        
         // Create user profile with all data
         const { error: insertError } = await supabase
           .from('users')

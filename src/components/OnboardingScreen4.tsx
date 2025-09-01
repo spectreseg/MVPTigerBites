@@ -16,6 +16,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setError('');
       setUploading(true);
       
       const processAndUploadFile = async (fileToUpload: File | Blob, originalFileName: string) => {
@@ -48,6 +50,8 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `avatars/${fileName}`;
 
+          console.log('Starting upload for file:', fileName);
+          
           // Upload to Supabase storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('avatars')
@@ -58,11 +62,10 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
           if (uploadError) {
             console.error('Upload error:', uploadError);
-            console.log('Upload error details:', uploadError.message);
-            // Try to continue anyway - sometimes the upload succeeds despite error
-          } else {
-            console.log('Upload successful:', uploadData);
+            throw uploadError;
           }
+          
+          console.log('Upload successful:', uploadData);
 
           // Get public URL
           const { data: urlData } = supabase.storage
@@ -73,14 +76,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
             setSelectedImage(urlData.publicUrl);
             console.log('Image uploaded successfully:', urlData.publicUrl);
           } else {
-            console.log('Could not get public URL, but upload may have succeeded');
-            setSelectedImage('uploaded');
+            throw new Error('Could not get public URL');
           }
           
         } catch (error) {
           console.error('Upload process error:', error);
-          // Don't block the user - they can proceed without avatar
-          setSelectedImage('uploaded');
+          setError('Upload failed. You can proceed without an avatar.');
+          // Still allow proceeding without avatar
         } finally {
           setUploading(false);
         }
@@ -222,6 +224,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                       <span className="text-green-600 text-xs font-medium">✓ Uploaded</span>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {/* Show error message */}
+              {error && (
+                <div className="mt-2 text-center">
+                  <p className="text-red-400 text-sm">{error}</p>
                 </div>
               )}
             </div>
