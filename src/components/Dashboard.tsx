@@ -10,19 +10,28 @@ export default function Dashboard() {
   const [loadingAvatar, setLoadingAvatar] = useState(false);
 
   console.log('Dashboard render - user:', user?.id, 'userProfile:', userProfile?.full_name, 'loading:', loading);
+  console.log('Avatar URL from profile:', userProfile?.avatar_url);
 
   // Load avatar when userProfile changes
   useEffect(() => {
-    if (userProfile?.avatar_url) {
+    if (userProfile?.avatar_url && userProfile.avatar_url.trim() !== '') {
+      console.log('Loading avatar for path:', userProfile.avatar_url);
       loadAvatar(userProfile.avatar_url);
+    } else {
+      console.log('No avatar URL found in profile');
+      setAvatarUrl(null);
     }
   }, [userProfile?.avatar_url]);
 
   const loadAvatar = async (avatarPath: string) => {
-    if (!avatarPath) return;
+    if (!avatarPath || avatarPath.trim() === '') {
+      setAvatarUrl(null);
+      return;
+    }
     
     setLoadingAvatar(true);
     try {
+      console.log('Creating signed URL for avatar path:', avatarPath);
       // Generate signed URL for private avatar
       const { data, error } = await supabase.storage
         .from('avatars')
@@ -32,6 +41,7 @@ export default function Dashboard() {
         console.error('Error creating signed URL:', error);
         setAvatarUrl(null);
       } else {
+        console.log('Generated signed URL:', data.signedUrl);
         setAvatarUrl(data.signedUrl);
       }
     } catch (error) {
