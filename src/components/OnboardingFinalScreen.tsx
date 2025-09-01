@@ -46,7 +46,7 @@ export default function OnboardingFinalScreen({ onComplete }: OnboardingFinalScr
           <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide mb-4">
             Thanks for registering!
           </h1>
-          <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide">
+          <p className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide italic">
             Redirecting to dashboard...
           </p>
         </div>
