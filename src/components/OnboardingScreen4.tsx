@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png'; // Using tiger4.png as specified
-import heic2any from 'heic2any';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -36,31 +35,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif');
       
       if (isHeic) {
-        // Convert HEIC to JPEG with optimized settings for speed
-        try {
-          heic2any({
-            blob: file,
-            toType: 'image/jpeg',
-            quality: 0.6, // Lower quality for faster processing
-            multiple: false // Ensure single output
-          }).then((convertedBlob) => {
-            // Handle the converted blob
-            const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              if (e.target?.result) {
-                setSelectedImage(e.target.result as string);
-              }
-            };
-            reader.readAsDataURL(blob);
-          }).catch((error) => {
-            console.error('HEIC conversion failed:', error);
-            alert('Unable to process HEIC file. Please try uploading a JPG or PNG instead.');
-          });
-        } catch (error) {
-          console.error('HEIC processing error:', error);
-          alert('HEIC files are not supported on this device. Please use JPG or PNG format.');
+        // Show helpful message for HEIC files
+        alert('HEIC files need to be converted first. Please convert your HEIC file to JPG using your device\'s photo app or online converter, then upload the JPG version.');
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
+        return;
       } else {
         // Handle regular image files
         const reader = new FileReader();
@@ -148,7 +129,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 type="file"
                 ref={fileInputRef}
                 onChange={handleImageUpload}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.heic,.HEIC,.heif,.HEIF"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 className="hidden"
               />
               <button
