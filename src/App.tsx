@@ -6,11 +6,12 @@ import OnboardingScreen2 from './components/OnboardingScreen2';
 import OnboardingPasswordScreen from './components/OnboardingPasswordScreen';
 import OnboardingScreen3 from './components/OnboardingScreen3';
 import OnboardingScreen4 from './components/OnboardingScreen4';
+import OnboardingFinalScreen from './components/OnboardingFinalScreen';
 import StarryBackground from './components/StarryBackground';
 import tigerImage from './assets/tiger.png';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding-password' | 'onboarding3' | 'onboarding4'>('login');
+  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'registration-form' | 'onboarding2' | 'onboarding-password' | 'onboarding3' | 'onboarding4' | 'onboarding-final'>('login');
 
   const handleAuthModeChange = (mode: 'login' | 'register') => {
     if (mode === 'register') {
@@ -40,6 +41,16 @@ function App() {
     setCurrentScreen('onboarding4');
   };
 
+  const handleProceedToFinal = () => {
+    setCurrentScreen('onboarding-final');
+  };
+
+  const handleRegistrationComplete = () => {
+    // TODO: Redirect to actual dashboard
+    console.log('Registration complete - redirecting to dashboard');
+    setCurrentScreen('login'); // For now, go back to login
+  };
+
   const handleProceedToOnboarding2 = () => {
     setCurrentScreen('onboarding2');
   };
@@ -59,6 +70,15 @@ function App() {
   const handleBackFromOnboarding4 = () => {
     setCurrentScreen('onboarding3');
   };
+
+  // Show final onboarding screen
+  if (currentScreen === 'onboarding-final') {
+    return (
+      <OnboardingFinalScreen 
+        onComplete={handleRegistrationComplete}
+      />
+    );
+  }
 
   // Show registration screen when register is selected
   if (currentScreen === 'register') {
@@ -105,7 +125,7 @@ function App() {
     return (
       <OnboardingScreen4 
         onBack={handleBackFromOnboarding4}
-        onProceed={handleProceedToRegistration}
+        onProceed={handleProceedToFinal}
       />
     );
   }
@@ -113,21 +133,9 @@ function App() {
   // Show registration form (placeholder for now)
   if (currentScreen === 'registration-form') {
     return (
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        <StarryBackground />
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h2 className="text-2xl font-medium text-gray-900 mb-6 text-center">Registration Form</h2>
-            <p className="text-gray-600 text-center mb-6">Registration form will be implemented here</p>
-            <button
-              onClick={handleBackToLogin}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
-            >
-              Back to Login
-            </button>
-          </div>
-        </div>
-      </div>
+      <OnboardingFinalScreen 
+        onComplete={handleRegistrationComplete}
+      />
     );
   }
   return (
