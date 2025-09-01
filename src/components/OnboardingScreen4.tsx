@@ -10,16 +10,19 @@ interface OnboardingScreen4Props {
 
 export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScreen4Props) {
   const [tigerVisible, setTigerVisible] = useState(false);
+  const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const tigerTimer = setTimeout(() => setTigerVisible(true), 300);
-    const buttonsTimer = setTimeout(() => setButtonsVisible(true), 800);
+    const bubbleTimer = setTimeout(() => setBubbleVisible(true), 800);
+    const buttonsTimer = setTimeout(() => setButtonsVisible(true), 1300);
 
     return () => {
       clearTimeout(tigerTimer);
+      clearTimeout(bubbleTimer);
       clearTimeout(buttonsTimer);
     };
   }, []);
@@ -48,16 +51,27 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-4 md:py-8">
         {/* Content container with tiger and text */}
         <div className="relative flex flex-col items-center justify-center -mb-8 md:-mb-16">
-          {/* Text above tiger */}
-          <div className="mb-4 md:mb-6 text-center">
-            <h2 className="text-white text-xl md:text-2xl font-medium">
-              Please upload an avatar
-            </h2>
+          {/* Speech bubble - above tiger on mobile, to the right on desktop */}
+          <div className={`relative md:absolute md:-top-16 md:left-80 z-20 mb-2 md:mb-0 order-1 md:order-none transition-opacity duration-700 ${bubbleVisible ? 'opacity-100' : 'opacity-0'}`}
+               style={{ transform: 'translateY(-15px)' }}>
+            <div className="bg-white rounded-2xl p-3 md:p-4 shadow-2xl relative w-56 md:w-64 h-20 md:h-24 flex items-center justify-center">
+              {/* Speech bubble tail - pointing down on mobile, down-left on desktop */}
+              <div className="absolute md:bottom-0 md:left-12 bottom-0 left-1/2 md:left-12 transform md:translate-y-2 translate-y-2 -translate-x-1/2 md:translate-x-0">
+                <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-white"></div>
+              </div>
+              
+              {/* Text content */}
+              <div className="text-center">
+                <p className="text-gray-900 text-sm md:text-base font-medium leading-tight">
+                  Please upload an avatar
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Monte mascot */}
           <div
-            className={`flex-shrink-0 transition-transform duration-1000 ease-out ${
+            className={`flex-shrink-0 order-2 md:order-none transition-transform duration-1000 ease-out ${
               tigerVisible ? 'translate-y-0' : 'translate-y-full'
             }`}
           >
