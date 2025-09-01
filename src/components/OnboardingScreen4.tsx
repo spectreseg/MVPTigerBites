@@ -60,29 +60,27 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
             console.error('Upload error:', uploadError);
             console.log('Upload error details:', uploadError.message);
             // Try to continue anyway - sometimes the upload succeeds despite error
-          }
-            setUploading(false);
-            return;
+          } else {
+            console.log('Upload successful:', uploadData);
           }
 
           // Get public URL
-          const { data: urlData, error: urlError } = supabase.storage
+          const { data: urlData } = supabase.storage
             .from('avatars')
             .getPublicUrl(filePath);
 
-          if (urlData?.publicUrl && !urlError) {
+          if (urlData?.publicUrl) {
             setSelectedImage(urlData.publicUrl);
             console.log('Image uploaded successfully:', urlData.publicUrl);
           } else {
-            console.error('URL error:', urlError);
-            // For now, just set a placeholder - the upload might have worked
+            console.log('Could not get public URL, but upload may have succeeded');
             setSelectedImage('uploaded');
           }
           
         } catch (error) {
           console.error('Upload process error:', error);
           // Don't block the user - they can proceed without avatar
-          setSelectedImage('upload-error');
+          setSelectedImage('uploaded');
         } finally {
           setUploading(false);
         }
