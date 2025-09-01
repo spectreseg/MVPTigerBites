@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import StarryBackground from './StarryBackground';
-import tigerImage from '../assets/tiger2.png';
+import tigerImage from '../assets/tiger3.png';
 
 interface OnboardingScreen3Props {
   onBack: () => void;
