@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
-import { supabase } from '../lib/supabase';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
@@ -14,8 +13,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
+  const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -30,48 +28,48 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     };
   }, []);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    setUploadStatus('Uploading...');
-
-    try {
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('user-avatars')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(fileName);
-
-      setSelectedImage(publicUrl);
-      setUploadStatus('Upload successful!');
-      
-    } catch (error: any) {
-      setUploadStatus(`Upload failed: ${error.message}`);
-      setSelectedImage(null);
-    } finally {
-      setUploading(false);
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
     }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    setProcessing(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setSelectedImage(result);
+      setProcessing(false);
+    };
+    
+    reader.onerror = () => {
+      alert('Error reading file');
+      setProcessing(false);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleProceed = () => {
@@ -140,30 +138,34 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 className="hidden"
               />
               
-              <button
-                onClick={handleUploadClick}
-                disabled={uploading}
-                className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <Upload className="w-5 h-5" />
-                {uploading ? 'Uploading...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
-              </button>
-              
-              {/* Status message */}
-              {uploadStatus && (
-                <p className={`mt-2 text-sm text-center ${uploadStatus.includes('failed') ? 'text-red-400' : 'text-green-400'}`}>
-                  {uploadStatus}
-                </p>
-              )}
-              
-              {/* Preview */}
-              {selectedImage && (
-                <div className="mt-3 flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
-                    <img src={selectedImage} alt="Avatar Preview" className="w-full h-full object-cover" />
+              <div className="space-y-3">
+                <button
+                  onClick={handleUploadClick}
+                  disabled={processing}
+                  className="w-full bg-gray-200 text-gray-800 px-4 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-gray-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-gray-300 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Upload className="w-5 h-5" />
+                  {processing ? 'Processing...' : selectedImage ? 'Change Avatar' : 'Upload Avatar'}
+                </button>
+                
+                {/* Preview */}
+                {selectedImage && (
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="relative">
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                        <img src={selectedImage} alt="Avatar Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <button
+                        onClick={handleRemoveImage}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-green-400 text-sm">✓ Image ready</p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Skip/Proceed button */}
