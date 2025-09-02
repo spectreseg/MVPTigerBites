@@ -29,17 +29,17 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
     // Text fades in first
     const textTimer = setTimeout(() => {
       setTextVisible(true);
-    }, 300);
+    }, 100);
 
     // Tiger flies up after text
     const tigerTimer = setTimeout(() => {
       setTigerVisible(true);
-    }, 800);
+    }, 200);
 
     // Start registration process after animations complete
     const registrationTimer = setTimeout(() => {
       handleRegistration();
-    }, 6000); // Wait 6 seconds before starting registration
+    }, 2000); // Wait 2 seconds before starting registration
 
     return () => {
       clearTimeout(textTimer);
@@ -116,7 +116,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         // Auto-redirect after 5 seconds on success to allow user to see the message
         setTimeout(() => {
           onComplete();
-        }, 5000);
+        }, 2000);
       } else {
         setError('Registration failed - no user data returned');
         setRegistering(false);
@@ -176,7 +176,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         </div>
 
         {/* Monte mascot with heart */}
-        <div className={`flex-shrink-0 transition-transform duration-1000 ease-out ${tigerVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`flex-shrink-0 transition-transform duration-500 ease-out ${tigerVisible ? 'translate-y-0' : 'translate-y-full'}`}>
           <img
             src={tigerImage}
             alt="Monte the Tiger Mascot with Heart"
