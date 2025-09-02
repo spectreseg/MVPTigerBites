@@ -39,7 +39,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
     // Start registration process after animations complete
     const registrationTimer = setTimeout(() => {
       handleRegistration();
-    }, 2000);
+    }, 6000); // Wait 6 seconds before starting registration
 
     return () => {
       clearTimeout(textTimer);
@@ -113,10 +113,10 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         
         setRegistering(false);
         
-        // Auto-redirect after 3 seconds on success to allow user to see the message
+        // Auto-redirect after 5 seconds on success to allow user to see the message
         setTimeout(() => {
           onComplete();
-        }, 3000);
+        }, 5000);
       } else {
         setError('Registration failed - no user data returned');
         setRegistering(false);
