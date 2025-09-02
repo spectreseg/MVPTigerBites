@@ -98,7 +98,7 @@ function AppContent() {
   };
 
   const handleAvatarData = (data: { avatarUrl: string; avatarFile?: File }) => {
-    setRegistrationData(prev => ({ ...prev, ...data }));
+    setRegistrationData(prev => ({ ...prev, avatarUrl: data.avatarUrl }));
     setCurrentScreen('onboarding-final');
   };
 

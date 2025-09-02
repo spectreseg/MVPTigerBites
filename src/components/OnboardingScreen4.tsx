@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Upload, X, Camera } from 'lucide-react';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
-  onProceed: (data: { avatarUrl: string; avatarFile?: File }) => void;
+  onProceed: (data: { avatarUrl: string }) => void;
 }
 
 export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScreen4Props) {
@@ -14,9 +13,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -53,7 +50,6 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setSelectedImage(result);
-      setSelectedFile(file);
       setProcessing(false);
     };
     
@@ -71,68 +67,13 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
-    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleProceed = async () => {
-    if (!selectedFile) {
-      onProceed({ avatarUrl: '' });
-      return;
-    }
-
-    setUploading(true);
-    
-    try {
-      // Generate unique filename
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      
-      // Upload to Supabase Storage with timeout
-      const uploadPromise = supabase.storage
-        .from('user-avatars')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout')), 10000)
-      );
-      
-      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
-
-      if (error) {
-        console.error('Upload error:', error);
-        if (error.message === 'Upload timeout') {
-          alert('Upload is taking too long. Proceeding without avatar.');
-          onProceed({ avatarUrl: '' });
-        } else {
-          alert('Failed to upload image. Proceeding without avatar.');
-          onProceed({ avatarUrl: '' });
-        }
-        setUploading(false);
-        return;
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(fileName);
-
-      onProceed({ 
-        avatarUrl: urlData.publicUrl,
-        avatarFile: selectedFile 
-      });
-    } catch (err) {
-      console.error('Upload error:', err);
-      alert('Failed to upload image. Proceeding without avatar.');
-      onProceed({ avatarUrl: '' });
-      setUploading(false);
-    }
+  const handleProceed = () => {
+    onProceed({ avatarUrl: selectedImage || '' });
   };
 
   const handleSkip = () => {

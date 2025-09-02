@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger5.png';
 
@@ -18,28 +17,29 @@ interface OnboardingFinalScreenProps {
 }
 
 export default function OnboardingFinalScreen({ registrationData, onComplete }: OnboardingFinalScreenProps) {
-  const [tigerVisible, setTigerVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
+  const [tigerVisible, setTigerVisible] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState('');
+  const [completed, setCompleted] = useState(false);
 
   const { signUp, updateUserProfile } = useAuthContext();
 
   useEffect(() => {
-    // Text fades in first
+    // Text appears first
     const textTimer = setTimeout(() => {
       setTextVisible(true);
     }, 100);
 
-    // Tiger flies up after text
+    // Tiger flies up quickly after text
     const tigerTimer = setTimeout(() => {
       setTigerVisible(true);
     }, 200);
 
-    // Start registration process after animations complete
+    // Start registration after animations complete
     const registrationTimer = setTimeout(() => {
       handleRegistration();
-    }, 2000); // Wait 2 seconds before starting registration
+    }, 2000);
 
     return () => {
       clearTimeout(textTimer);
@@ -49,7 +49,6 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
   }, []);
 
   const handleRegistration = async () => {
-    
     try {
       setRegistering(true);
       setError('');
@@ -68,52 +67,30 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         return;
       }
 
-      if (data.user) {
-        console.log('User created, now creating profile...');
+      if (data?.user) {
+        console.log('User created, now updating profile...');
         
-        // Update the auth user's display name
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { 
-            full_name: registrationData.fullName,
-            display_name: registrationData.fullName 
-          }
+        // Update user profile with all data
+        const { error: updateError } = await updateUserProfile({
+          avatar_url: registrationData.avatarUrl,
+          location_enabled: registrationData.locationEnabled,
+          latitude: registrationData.latitude,
+          longitude: registrationData.longitude,
         });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
-        }
-        
-        // Create user profile with all data
-        const { error: insertError } = await supabase
-          .from('users')
-          .upsert({
-            id: data.user.id,
-            email: registrationData.email,
-            full_name: registrationData.fullName,
-            avatar_url: registrationData.avatarUrl,
-            location_enabled: registrationData.locationEnabled,
-            latitude: registrationData.latitude,
-            longitude: registrationData.longitude,
-          });
 
-        if (insertError) {
-          console.error('Error creating user profile:', insertError);
-          setError(`Database error: ${insertError.message}`);
+        if (updateError) {
+          console.error('Error updating user profile:', updateError);
+          setError(`Profile update error: ${updateError.message}`);
           setRegistering(false);
           return;
         }
 
-        console.log('User profile created successfully:', {
-          id: data.user.id,
-          email: registrationData.email,
-          full_name: registrationData.fullName,
-          avatar_url: registrationData.avatarUrl,
-          location_enabled: registrationData.locationEnabled
-        });
+        console.log('User profile updated successfully');
         
         setRegistering(false);
+        setCompleted(true);
         
-        // Auto-redirect after 5 seconds on success to allow user to see the message
+        // Show completion message for 2 seconds before redirecting
         setTimeout(() => {
           onComplete();
         }, 2000);
@@ -138,7 +115,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-4 md:py-8">
         
         {/* Thank you message */}
-        <div className={`text-center mb-4 md:mb-8 transition-all duration-700 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+        <div className={`text-center mb-4 md:mb-8 transition-all duration-500 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           {error ? (
             <div className="text-center">
               <h1 className="text-red-400 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide mb-4">
@@ -163,13 +140,22 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
                 Please wait
               </p>
             </>
-          ) : (
+          ) : completed ? (
             <>
               <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
                 Thanks for registering!
               </h1>
               <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
-                Redirecting to dashboard...
+                Welcome to TigerBites
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
+                Almost done!
+              </h1>
+              <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
+                Setting up your profile...
               </p>
             </>
           )}

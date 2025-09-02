@@ -1,15 +1,13 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
 import { LogOut, User, MapPin, Heart } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export default function Dashboard() {
-  const { user, userProfile, signOut, loading } = useAuthContext();
+  const { user, userProfile, signOut } = useAuthContext();
 
   // Show dashboard with available data (fallback if profile not loaded yet)
-  const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || userProfile?.full_name || 'Loading...';
-  const displayEmail = userProfile?.email || user?.email || '';
+  const displayName = user?.full_name || 'Loading...';
+  const displayEmail = user?.email || '';
 
   const handleSignOut = async () => {
     console.log('Sign out button clicked');
@@ -60,9 +58,9 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {userProfile?.avatar_url ? (
+                {user?.avatar_url ? (
                   <img
-                    src={userProfile.avatar_url}
+                    src={user.avatar_url}
                     alt="Avatar"
                     className="w-16 h-16 rounded-full object-cover"
                   />
@@ -78,7 +76,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {userProfile?.location_enabled && (
+            {user?.location_enabled && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span>Location services enabled</span>
@@ -108,7 +106,7 @@ export default function Dashboard() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
                 <span className="text-gray-900">
-                  {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString() : 'Today'}
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Today'}
                 </span>
               </div>
             </div>

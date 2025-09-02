@@ -14,8 +14,7 @@ export default function AuthForm({ onToggleMode }: AuthFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
-    fullName: ''
+    confirmPassword: ''
   });
 
   const { signIn } = useAuthContext();

@@ -1,70 +1,27 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import type { User as AuthUser } from '@supabase/supabase-js';
-import type { User } from '../lib/supabase';
+import { signIn as authSignIn, signUp as authSignUp, signOut as authSignOut, updateUserProfile as authUpdateUserProfile, getCurrentUser, User } from '../lib/auth';
 
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchUserProfile(session.user.id);
-        }
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (mounted) {
-          setUser(session?.user ?? null);
-          if (session?.user) {
-            await fetchUserProfile(session.user.id);
-          } else {
-            setUserProfile(null);
-          }
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        setUserProfile(null);
-      } else {
-        setUserProfile(data);
-      }
-    } catch (error) {
-      setUserProfile(null);
+    // Check for existing user on mount
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+      setUserProfile(currentUser);
     }
-  };
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await authSignIn(email, password);
+      if (data?.user) {
+        setUser(data.user);
+        setUserProfile(data.user);
+      }
       return { data, error };
     } catch (err) {
       console.error('Sign in error:', err);
@@ -74,16 +31,11 @@ export function useAuth() {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            display_name: fullName
-          }
-        }
-      });
+      const { data, error } = await authSignUp(email, password, fullName);
+      if (data?.user) {
+        setUser(data.user);
+        setUserProfile(data.user);
+      }
       return { data, error };
     } catch (err) {
       console.error('Sign up error:', err);
@@ -98,12 +50,8 @@ export function useAuth() {
       setUser(null);
       setUserProfile(null);
       
-      const { error } = await supabase.auth.signOut();
-      console.log('Supabase signOut result:', { error });
-      if (!error) {
-        console.error('Supabase signOut error:', error);
-        return { error };
-      }
+      const { error } = await authSignOut();
+      console.log('Auth signOut result:', { error });
       
       console.log('Sign out completed successfully');
       return { error };
@@ -119,14 +67,10 @@ export function useAuth() {
   const updateUserProfile = async (updates: Partial<User>) => {
     if (!user) return { error: new Error('No user logged in') };
 
-    const { data, error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', user.id)
-      .select()
-      .single();
+    const { data, error } = await authUpdateUserProfile(user.id, updates);
 
     if (!error && data) {
+      setUser(data);
       setUserProfile(data);
     }
 
