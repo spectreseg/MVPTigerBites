@@ -26,9 +26,6 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
   const { signUp, updateUserProfile } = useAuthContext();
 
   useEffect(() => {
-    // Start registration process
-    handleRegistration();
-
     // Text fades in first
     const textTimer = setTimeout(() => {
       setTextVisible(true);
@@ -39,9 +36,15 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
       setTigerVisible(true);
     }, 800);
 
+    // Start registration process after animations complete
+    const registrationTimer = setTimeout(() => {
+      handleRegistration();
+    }, 2000);
+
     return () => {
       clearTimeout(textTimer);
       clearTimeout(tigerTimer);
+      clearTimeout(registrationTimer);
     };
   }, []);
 
@@ -110,10 +113,10 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         
         setRegistering(false);
         
-        // Auto-redirect after 4 seconds on success to allow user to see the message
+        // Auto-redirect after 3 seconds on success to allow user to see the message
         setTimeout(() => {
           onComplete();
-        }, 4000);
+        }, 3000);
       } else {
         setError('Registration failed - no user data returned');
         setRegistering(false);
