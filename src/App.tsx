@@ -97,7 +97,7 @@ function AppContent() {
     setCurrentScreen('onboarding4');
   };
 
-  const handleAvatarData = (data: { avatarUrl: string }) => {
+  const handleAvatarData = (data: { avatarUrl: string; avatarFile?: File }) => {
     setRegistrationData(prev => ({ ...prev, ...data }));
     setCurrentScreen('onboarding-final');
   };

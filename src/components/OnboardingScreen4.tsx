@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger4.png';
 
 interface OnboardingScreen4Props {
   onBack: () => void;
-  onProceed: (data: { avatarUrl: string }) => void;
+  onProceed: (data: { avatarUrl: string; avatarFile?: File }) => void;
 }
 
 export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScreen4Props) {
@@ -13,7 +14,9 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,6 +53,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setSelectedImage(result);
+      setSelectedFile(file);
       setProcessing(false);
     };
     
@@ -67,13 +71,54 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleProceed = () => {
-    onProceed({ avatarUrl: selectedImage || '' });
+  const handleProceed = async () => {
+    if (!selectedFile) {
+      onProceed({ avatarUrl: '' });
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      // Generate unique filename
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-avatars')
+        .upload(fileName, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload image. Please try again.');
+        setUploading(false);
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(fileName);
+
+      onProceed({ 
+        avatarUrl: urlData.publicUrl,
+        avatarFile: selectedFile 
+      });
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert('Failed to upload image. Please try again.');
+      setUploading(false);
+    }
   };
 
   const handleSkip = () => {
@@ -172,9 +217,10 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
             <div className={`order-2 md:order-3 flex justify-center transition-all duration-700 ease-out ${buttonsVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
               <button
                 onClick={selectedImage ? handleProceed : handleSkip}
-                className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto"
+                disabled={uploading}
+                className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {selectedImage ? 'Proceed' : 'Skip'}
+                {uploading ? 'Uploading...' : selectedImage ? 'Proceed' : 'Skip'}
               </button>
             </div>
           </div>
