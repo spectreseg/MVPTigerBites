@@ -90,17 +90,30 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
+      // Upload to Supabase Storage with timeout
+      const uploadPromise = supabase.storage
         .from('user-avatars')
         .upload(fileName, selectedFile, {
           cacheControl: '3600',
           upsert: false
         });
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Upload timeout')), 10000)
+      );
+      
+      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Upload error:', error);
-        alert('Failed to upload image. Please try again.');
+        if (error.message === 'Upload timeout') {
+          alert('Upload is taking too long. Proceeding without avatar.');
+          onProceed({ avatarUrl: '' });
+        } else {
+          alert('Failed to upload image. Proceeding without avatar.');
+          onProceed({ avatarUrl: '' });
+        }
         setUploading(false);
         return;
       }
@@ -116,7 +129,8 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
       });
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Failed to upload image. Please try again.');
+      alert('Failed to upload image. Proceeding without avatar.');
+      onProceed({ avatarUrl: '' });
       setUploading(false);
     }
   };
@@ -220,7 +234,7 @@ export default function OnboardingScreen4({ onBack, onProceed }: OnboardingScree
                 disabled={uploading}
                 className="bg-purple-600 text-white px-8 py-2.5 md:px-10 md:py-3 rounded-xl text-base md:text-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-purple-600 min-w-[120px] w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {uploading ? 'Uploading...' : selectedImage ? 'Proceed' : 'Skip'}
+                {uploading ? 'Uploading... (10s max)' : selectedImage ? 'Proceed' : 'Skip'}
               </button>
             </div>
           </div>
