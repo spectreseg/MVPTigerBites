@@ -1,29 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useAuthContext } from '../context/AuthContext';
 import StarryBackground from './StarryBackground';
 import tigerImage from '../assets/tiger5.png';
 
 interface OnboardingFinalScreenProps {
-  registrationData: {
-    fullName: string;
-    email: string;
-    password: string;
-    avatarUrl: string;
-    locationEnabled: boolean;
-    latitude: number | null;
-    longitude: number | null;
-  };
   onComplete: () => void;
 }
 
-export default function OnboardingFinalScreen({ registrationData, onComplete }: OnboardingFinalScreenProps) {
+export default function OnboardingFinalScreen({ onComplete }: OnboardingFinalScreenProps) {
   const [textVisible, setTextVisible] = useState(false);
   const [tigerVisible, setTigerVisible] = useState(false);
-  const [registering, setRegistering] = useState(false);
-  const [error, setError] = useState('');
-  const [completed, setCompleted] = useState(false);
-
-  const { signUp, updateUserProfile } = useAuthContext();
 
   useEffect(() => {
     // Text appears first
@@ -36,75 +21,17 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
       setTigerVisible(true);
     }, 200);
 
-    // Start registration after animations complete
-    const registrationTimer = setTimeout(() => {
-      handleRegistration();
-    }, 2000);
+    // Complete registration after 3 seconds
+    const completeTimer = setTimeout(() => {
+      onComplete();
+    }, 3000);
 
     return () => {
       clearTimeout(textTimer);
       clearTimeout(tigerTimer);
-      clearTimeout(registrationTimer);
+      clearTimeout(completeTimer);
     };
-  }, []);
-
-  const handleRegistration = async () => {
-    try {
-      setRegistering(true);
-      setError('');
-      
-      // Sign up the user
-      const { data, error: signUpError } = await signUp(
-        registrationData.email,
-        registrationData.password,
-        registrationData.fullName
-      );
-
-      if (signUpError) {
-        console.error('Signup error:', signUpError);
-        setError(signUpError.message);
-        setRegistering(false);
-        return;
-      }
-
-      if (data?.user) {
-        console.log('User created, now updating profile...');
-        
-        // Update user profile with all data
-        const { error: updateError } = await updateUserProfile({
-          avatar_url: registrationData.avatarUrl,
-          location_enabled: registrationData.locationEnabled,
-          latitude: registrationData.latitude,
-          longitude: registrationData.longitude,
-        });
-
-        if (updateError) {
-          console.error('Error updating user profile:', updateError);
-          setError(`Profile update error: ${updateError.message}`);
-          setRegistering(false);
-          return;
-        }
-
-        console.log('User profile updated successfully');
-        
-        setRegistering(false);
-        setCompleted(true);
-        
-        // Show completion message for 2 seconds before redirecting
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
-      } else {
-        setError('Registration failed - no user data returned');
-        setRegistering(false);
-      }
-
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError('Registration failed. Please try again.');
-      setRegistering(false);
-    }
-  };
+  }, [onComplete]);
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -116,49 +43,12 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         
         {/* Thank you message */}
         <div className={`text-center mb-4 md:mb-8 transition-all duration-500 ease-out ${textVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          {error ? (
-            <div className="text-center">
-              <h1 className="text-red-400 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light tracking-wide mb-4">
-                Registration Failed
-              </h1>
-              <p className="text-white text-lg sm:text-xl md:text-2xl font-serif font-light tracking-wide mb-6">
-                {error}
-              </p>
-              <button
-                onClick={onComplete}
-                className="bg-purple-600 text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-all duration-200"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : registering ? (
-            <>
-              <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
-                Creating your account...
-              </h1>
-              <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
-                Please wait
-              </p>
-            </>
-          ) : completed ? (
-            <>
-              <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
-                Thanks for registering!
-              </h1>
-              <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
-                Welcome to TigerBites
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
-                Almost done!
-              </h1>
-              <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
-                Setting up your profile...
-              </p>
-            </>
-          )}
+          <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-light tracking-wide mb-2 md:mb-4">
+            Thanks for registering!
+          </h1>
+          <p className="text-white text-base sm:text-lg md:text-xl lg:text-2xl font-serif font-light tracking-wide">
+            Welcome to TigerBites
+          </p>
         </div>
 
         {/* Monte mascot with heart */}

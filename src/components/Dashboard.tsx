@@ -1,28 +1,11 @@
 import React from 'react';
 import { LogOut, User, MapPin, Heart } from 'lucide-react';
-import { useAuthContext } from '../context/AuthContext';
 
-export default function Dashboard() {
-  const { user, userProfile, signOut } = useAuthContext();
+interface DashboardProps {
+  onSignOut: () => void;
+}
 
-  // Show dashboard with available data (fallback if profile not loaded yet)
-  const displayName = user?.full_name || 'Loading...';
-  const displayEmail = user?.email || '';
-
-  const handleSignOut = async () => {
-    console.log('Sign out button clicked');
-    try {
-      const { error } = await signOut();
-      if (error) {
-        console.error('Sign out error:', error);
-      } else {
-        console.log('Sign out successful');
-      }
-    } catch (err) {
-      console.error('Unexpected sign out error:', err);
-    }
-  };
-
+export default function Dashboard({ onSignOut }: DashboardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
       {/* Header */}
@@ -36,10 +19,10 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700 font-medium">
-                Welcome, {displayName}!
+                Welcome!
               </span>
               <button
-                onClick={handleSignOut}
+                onClick={onSignOut}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <LogOut className="w-5 h-5" />
@@ -58,30 +41,15 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                {user?.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt="Avatar"
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-8 h-8 text-purple-600" />
-                )}
+                <User className="w-8 h-8 text-purple-600" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {displayName}
+                  Demo User
                 </h3>
-                <p className="text-gray-600">{displayEmail}</p>
+                <p className="text-gray-600">demo@sewanee.edu</p>
               </div>
             </div>
-            
-            {user?.location_enabled && (
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>Location services enabled</span>
-              </div>
-            )}
           </div>
 
           {/* Welcome Card */}
@@ -105,9 +73,7 @@ export default function Dashboard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
-                <span className="text-gray-900">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Today'}
-                </span>
+                <span className="text-gray-900">Today</span>
               </div>
             </div>
           </div>

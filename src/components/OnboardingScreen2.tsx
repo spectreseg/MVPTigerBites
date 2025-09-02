@@ -65,12 +65,6 @@ export default function OnboardingScreen2({ onBack, onProceed }: OnboardingScree
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate email domain
-    if (!formData.email.endsWith('@sewanee.edu')) {
-      setEmailError('Please use your Sewanee email');
-      return;
-    }
-    
     onProceed({
       fullName: formData.name,
       email: formData.email
