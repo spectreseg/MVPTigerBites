@@ -110,10 +110,10 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
         
         setRegistering(false);
         
-        // Auto-redirect after 3 seconds on success to allow user to see the message
+        // Auto-redirect after 4 seconds on success to allow user to see the message
         setTimeout(() => {
           onComplete();
-        }, 3000);
+        }, 4000);
       } else {
         setError('Registration failed - no user data returned');
         setRegistering(false);
