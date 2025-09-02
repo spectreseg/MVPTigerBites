@@ -87,7 +87,7 @@ export default function OnboardingFinalScreen({ registrationData, onComplete }: 
             id: data.user.id,
             email: registrationData.email,
             full_name: registrationData.fullName,
-            avatar_url: registrationData.avatarUrl || null,
+            avatar_url: registrationData.avatarUrl,
             location_enabled: registrationData.locationEnabled,
             latitude: registrationData.latitude,
             longitude: registrationData.longitude,
